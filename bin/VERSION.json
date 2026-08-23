@@ -3,8 +3,8 @@
     "platforms":  {
                       "windows-x64":  {
                                           "sqm":  {
-                                                      "commit":  "e75baef",
-                                                      "subject":  "sdfmodeler: (mesh (file ..)) を一級ノードに — 表示/transform編集/ピック/取込/色分け",
+                                                      "commit":  "bd2e0d6",
+                                                      "subject":  "sdfmodeler: calcNormal の 4タップをループ化 — シェーダコンパイルを 41% 短縮",
                                                       "bytes":  4986076
                                                   },
                                           "shader_core":  {
@@ -18,7 +18,7 @@
                   },
     "app":  {
                 "sdfmodeler":  {
-                                   "commit":  "e75baef",
+                                   "commit":  "bd2e0d6",
                                    "note":  "sqm/sdfmodeler の追跡ファイルの snapshot。原本は sqm 側"
                                }
             }

@@ -1568,9 +1568,19 @@ vec3 calcNormal(vec3 p, float t){
      十分小さいとセル毎のファセットが出る。エンジンで 3ボクセルなら消えると実測済み
      (docs/2026-07-21) なので、その値を下限にする。 */
   float h = max(max(3e-4, t * 2e-4), uGridNEps);
-  vec2 e = vec2(1.0, -1.0) * 0.5773 * h;
-  return normalize(e.xyy*map(p+e.xyy).x + e.yyx*map(p+e.yyx).x +
-                   e.yxy*map(p+e.yxy).x + e.xxx*map(p+e.xxx).x);
+  /* ⚠ 4タップは**ループで回す** (IQ の定石)。べた書きすると map() の静的呼び出し
+     箇所が 4 つになり、ANGLE→HLSL→FXC が SDF ツリーを 4 回インライン展開する。
+     コンパイル時間は展開コピー数に対して**超線形**に伸びるので、ここだけで
+     効き方が大きい (RTX 3090 / 24リーフ 34KB で実測 55.1秒 → 32.4秒 = −41%。
+     ソース長はほぼ不変 34.1→34.2KB なので、効いているのは長さでなく展開回数)。
+     方向ベクトルは元のべた書きと同一: i=0..3 が (+,-,-) (-,-,+) (-,+,-) (+,+,+)
+     = 従来の e.xyy / e.yyx / e.yxy / e.xxx に一致し、加算順序も同じ。 */
+  vec3 nsum = vec3(0.0);
+  for (int i = 0; i < 4; i++) {
+    vec3 e = 0.5773 * (2.0 * vec3(float((i+3)>>1 & 1), float((i>>1) & 1), float(i & 1)) - 1.0) * h;
+    nsum += e * map(p + e).x;
+  }
+  return normalize(nsum);
 }
 
 vec2 march(vec3 ro, vec3 rd){
