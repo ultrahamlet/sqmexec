@@ -738,7 +738,13 @@ class Emitter {
     this.lines = [];
     this.vc = 0;
     this.objIdx = 0;   /* probe 生成時: 現在 emit 中のオブジェクト index (材質色のobject内ブレンド用) */
+    /* 「値が 1e9 の番兵と分かっている一時変数」の名前。空集合 (非表示/blob/mesh/
+       focus 外/子の無いオプ) を表す。smooth 合成の第2引数に来ると fp32 の桁落ちで
+       結果が潰れる (docs/2026-08-24_..) ので、畳み込みから落とすのに使う。 */
+    this.sentinels = new Set();
   }
+  /* 空集合の距離。番兵として登録する (直接 push しないこと) */
+  emitEmpty(d) { this.push(`float ${d} = 1e9;`); this.sentinels.add(d); return d; }
   P(node, i) { return `parAt(${this.layout.offsets.get(node.id) + i})`; }
   V3(node, i) { return `vec3(${this.P(node, i)},${this.P(node, i + 1)},${this.P(node, i + 2)})`; }
   tmp(prefix) { return prefix + (this.vc++); }
@@ -755,7 +761,7 @@ class Emitter {
          描く)。hidden と同じ union 中立の 1e9 にし、選択/色分けの計測コードも
          出さない (97 blob × 5文 の死コードがコンパイルを重くしていた) */
       const d = this.tmp('d');
-      this.push(`float ${d} = 1e9;`);
+      this.emitEmpty(d);
       return d;
     }
     const sc = SCHEMA[node.type] || { kind: 'leaf' };
@@ -782,7 +788,7 @@ class Emitter {
     const d = this.tmp('d');
     if (this.focusSet && !this.focusSet.has(node.id)) {
       /* フォーカス外: 距離関数呼び出しを省き定数に (union/smooth-union/subtract に中立) */
-      this.push(`float ${d} = 1e9;`);
+      this.emitEmpty(d);
       return d;
     }
     const q = `(${pv} - ${this.V3(node, 0)})`;
@@ -826,9 +832,9 @@ class Emitter {
           const npt = bk.n, nseg = bk.nseg, m = bk.m;
           const fOff = off + 4 * npt, pdOff = fOff + 3 * npt,
                 fcOff = pdOff + npt, plOff = fcOff + nseg;
-          if (npt < 2 || m < 3) this.push(`float ${d} = 1e9;`);
+          if (npt < 2 || m < 3) this.emitEmpty(d);
           else {
-            this.push(`float ${d} = 1e9;`);
+            this.emitEmpty(d);
             this.push(`for (int i_ = 0; i_ < ${nseg}; i_++) ` +
               `${d} = min(${d}, sdSweepProfSeg(${pv}, ${off}, ${npt}, i_, ${fOff}, ${pdOff}, ${fcOff}, ${plOff}, ${m}));`);
           }
@@ -836,11 +842,11 @@ class Emitter {
         }
         const bak = sweepBaked(node.props);
         const npt = bak.n, nseg = bak.closed ? npt : npt - 1;
-        if (npt <= 0) this.push(`float ${d} = 1e9;`);
+        if (npt <= 0) this.emitEmpty(d);
         else if (npt === 1)
           this.push(`float ${d} = length(${pv} - vec3(parAt(${off}),parAt(${off + 1}),parAt(${off + 2}))) - parAt(${off + 3});`);
         else {
-          this.push(`float ${d} = 1e9;`);
+          this.emitEmpty(d);
           this.push(`for (int i_ = 0; i_ < ${nseg}; i_++) { ` +
             `int o_ = ${off} + 4 * i_; int p_ = ${off} + 4 * ((i_ + 1) % ${npt}); ` +
             `${d} = min(${d}, sdSweepSeg(${pv}, ` +
@@ -855,7 +861,7 @@ class Emitter {
         const off = this.layout.offsets.get(node.id);
         const bk = latheBaked(node.props);
         const m = bk.m, plOff = off + 5;
-        if (m < 2) { this.push(`float ${d} = 1e9;`); break; }
+        if (m < 2) { this.emitEmpty(d); break; }
         this.push(`vec2 ${d}q = vec2(length(${pv}.xz - vec2(parAt(${off}),parAt(${off + 2}))) - parAt(${off + 3}), ${pv}.y - parAt(${off + 1}));`);
         if (bk.solid && m >= 3)
           this.push(`float ${d} = sdPolyUV(${d}q, ${plOff}, ${m});`);
@@ -871,7 +877,7 @@ class Emitter {
         const off = this.layout.offsets.get(node.id);
         const bk = extrudeBaked(node.props);
         const m = bk.m, plOff = off + 5;
-        if (m < 3) { this.push(`float ${d} = 1e9;`); break; }
+        if (m < 3) { this.emitEmpty(d); break; }
         /* ★接尾辞は必ず数字以外にする: tmp() は d0,d1,… を作るので `${d}2` は
            ノード d1 で "d12" となり **別ノード d12 と衝突**してリンクエラーになる
            (152ノードの招き猫で実際に踏んだ)。lathe が `${d}q` を使っているのも同じ理由。 */
@@ -893,7 +899,7 @@ class Emitter {
     if (node.type === 'round' || node.type === 'onion') {
       /* 距離変形: round = d-r / onion = |d|-t (子コードを先に出して後段で変形) */
       const d = this.tmp('d');
-      if (!node.children.length) { this.push(`float ${d} = 1e9;`); return d; }
+      if (!node.children.length) { this.emitEmpty(d); return d; }
       const da = this.emit(node.children[0], pv);
       this.push(`float ${d} = ${node.type === 'onion' ? `abs(${da})` : da} - ${this.P(node, 0)};`);
       return d;
@@ -901,7 +907,7 @@ class Emitter {
     if (node.type === 'twist' || node.type === 'bend') {
       /* 非Lipschitz 変換: クエリ回転 + 距離に 1/L (uPar[1]) を乗じて安全化 */
       const d = this.tmp('d');
-      if (!node.children.length) { this.push(`float ${d} = 1e9;`); return d; }
+      if (!node.children.length) { this.emitEmpty(d); return d; }
       const q = this.tmp('q');
       const rate = this.P(node, 0), invL = this.P(node, 1);
       if (node.type === 'twist')
@@ -918,7 +924,7 @@ class Emitter {
       /* 有限線形反復: 射影を挟む隣接2コピーの min (エンジン sdf.cpp SDF_REPEAT と同式)。
          子コードを2回インライン展開する (probe 集計も2コピー分=意味的に正しい) */
       const d = this.tmp('d');
-      if (!node.children.length) { this.push(`float ${d} = 1e9;`); return d; }
+      if (!node.children.length) { this.emitEmpty(d); return d; }
       const v = this.tmp('rv'), s = this.tmp('rs'), ta = this.tmp('rt'), tb = this.tmp('rt');
       const pa = this.tmp('q'), pb = this.tmp('q');
       this.push(`vec3 ${v} = ${this.V3(node, 0)};`);
@@ -935,7 +941,7 @@ class Emitter {
     if (node.type === 'repeat-inf') {
       /* 無限反復: 各軸で隣接2コピー (添字クランプ無し)。エンジン SDF_REPEAT_INF と同式 */
       const d = this.tmp('d');
-      if (!node.children.length) { this.push(`float ${d} = 1e9;`); return d; }
+      if (!node.children.length) { this.emitEmpty(d); return d; }
       const spc = this.tmp('rsp');
       this.push(`vec3 ${spc} = ${this.V3(node, 0)};`);
       const sp = node.props.spacing || [1, 0, 1];
@@ -961,7 +967,7 @@ class Emitter {
       /* 軸整列3Dグリッド: 各軸で隣接2コピー → 有効軸のみ 2^k 組合せの min
          (エンジン SDF_REPEAT3 と同式)。有効軸数ぶんだけ子コードを展開 */
       const d = this.tmp('d');
-      if (!node.children.length) { this.push(`float ${d} = 1e9;`); return d; }
+      if (!node.children.length) { this.emitEmpty(d); return d; }
       const sp = this.V3(node, 0);
       const cnt = [this.P(node, 3), this.P(node, 4), this.P(node, 5)];
       const spc = this.tmp('rsp');
@@ -994,7 +1000,7 @@ class Emitter {
       this.push(`vec3 ${s} = ${sv};`);
       const q = this.tmp('q');
       this.push(`vec3 ${q} = ${pv} / ${s};`);
-      if (!node.children.length) { this.push(`float ${d} = 1e9;`); return d; }
+      if (!node.children.length) { this.emitEmpty(d); return d; }
       const dc = this.emit(node.children[0], q);
       this.push(`float ${d} = ${dc} * min(abs(${s}.x), min(abs(${s}.y), abs(${s}.z)));`);
       return d;
@@ -1018,7 +1024,7 @@ class Emitter {
       this.push(`float ${nn}m = dot(${pv}, ${nn}) - ${this.P(node, 3)};`);
       this.push(`vec3 ${p2} = ${pv} - (${nn}m > 0.0 ? 2.0*${nn}m : 0.0) * ${nn};`);
     }
-    if (!node.children.length) { const d = this.tmp('d'); this.push(`float ${d} = 1e9;`); return d; }
+    if (!node.children.length) { const d = this.tmp('d'); this.emitEmpty(d); return d; }
     return this.emit(node.children[0], p2);
   }
 
@@ -1034,9 +1040,21 @@ class Emitter {
   emitOpPruned(node, pv) {
     const t = node.type, isSmooth = t === 'smooth-union';
     const d = this.tmp('d');
+    /* この 1e9 は「まだ寄与が無い」印で、最初の子で必ず上書きされる (下の first)。
+       返り値は実距離なので sentinels には**登録しない** */
     this.push(`float ${d} = 1e9;`);
     const k = isSmooth ? this.P(node, 0) : null;
+    /* ブレンド種別 (round/deep/chamfer) は非枝刈り経路と揃える。
+       素の sUnion 固定だと (mode round) 等が黙って poly ブレンドで描かれる */
+    const fn = isSmooth
+      ? 'sUnion' + ({ round: 'Round', deep: 'Deep', chamfer: 'Cham' }[node.props.mode] || '')
+      : null;
     const kids = isSmooth ? [...node.children].reverse() : node.children;
+    /* 最初の寄与は畳まずに代入する。1e9 の番兵と smooth 合成すると、数式上は
+       「近い方=子の距離」でも fp32 では 1e9 の刻み (64) に丸められて潰れ、
+       子の距離が 32 未満だと 0 が返る → オブジェクトが「どこでも距離0」の
+       塊になり画面を埋める。min (union) は安全だが smooth は安全でない。 */
+    let first = true;
     for (const c of kids) {
       /* 非表示の子と blob だけの部分木はループごとスキップ。emit() の 1e9 化
          だけに任せると、遠方で「ガード球の下界 lb で代用」する else 枝が
@@ -1044,8 +1062,8 @@ class Emitter {
          そのまま亡霊の塊として描かれる (blob 97 個のペンギンで実測) */
       if (raymarchEmpty(c)) continue;
       const sph = nodeSphere(c);
-      const combine = cd => isSmooth
-        ? `${d} = sUnion(${cd}, ${d}, ${k});`
+      const combine = cd => first ? `${d} = ${cd};`
+        : isSmooth ? `${d} = ${fn}(${cd}, ${d}, ${k});`
         : `${d} = min(${d}, ${cd});`;
       if (sph) {
         const gi = this.layout.guards.length;
@@ -1071,6 +1089,7 @@ class Emitter {
         const cd = this.emit(c, pv);   /* ガード不可 (plane/twist等) → 無条件 */
         this.push(combine(cd));
       }
+      first = false;
     }
     return d;
   }
@@ -1082,12 +1101,16 @@ class Emitter {
       return this.emitOpPruned(node, pv);
     if (raymarchEmpty(node)) {   /* blob/hidden だけの op — 子コードごと省く */
       const d = this.tmp('d');
-      this.push(`float ${d} = 1e9;`);
+      this.emitEmpty(d);
       return d;
     }
-    const kids = node.children.map(c => this.emit(c, pv));
+    let kids = node.children.map(c => this.emit(c, pv));
+    /* 空集合 (非表示/blob/mesh/focus 外) の子は smooth 和の畳み込みから落とす。
+       和では中立だが、右fold の種が番兵になると sUnion(子, 1e9, k) が fp32 の
+       桁落ちで潰れる (docs/2026-08-24_..)。min (union) は安全なので触らない。 */
+    if (t === 'smooth-union') kids = kids.filter(x => !this.sentinels.has(x));
     const d = this.tmp('d');
-    if (!kids.length) { this.push(`float ${d} = 1e9;`); return d; }
+    if (!kids.length) { this.emitEmpty(d); return d; }
     if (t === 'invert') { this.push(`float ${d} = -${kids[0]};`); return d; }
     if (t === 'blend') {
       if (kids.length === 1) { this.push(`float ${d} = ${kids[0]};`); return d; }
@@ -1363,8 +1386,13 @@ float sdOctahedron(vec3 pq, float s){
 /* sqm と同一の滑らかCSG */
 float sUnion(float da, float db, float k){
   k = max(k, 1e-6);
-  float h = clamp(0.5 + 0.5*(db-da)/k, 0.0, 1.0);
-  return mix(db, da, h) - k*h*(1.0-h);
+  /* mix(db, da, h) を素直に書くと db が 1e9 (未寄与の番兵) のとき h=1 でも
+     db + (da-db) が fp32 の桁落ちで潰れる (1e9 の刻みは 64 → da<32 で 0)。
+     min からの差分 e (=|da-db|) で書くと g=0 になり m がそのまま残る。数式は同一。 */
+  float m = min(da, db);
+  float e = max(da, db) - m;
+  float g = clamp(0.5 - 0.5*e/k, 0.0, 0.5);
+  return m + g*e - k*g*(1.0-g);
 }
 /* ブレンド種別 (エンジン sdf.cpp の sunion_variant/sinter_variant と同式)。
    round = hg_sdf fOpUnionRound (= Head の smin2) / deep = poly と round の深い方 (smin3) /
@@ -1385,8 +1413,11 @@ float sInterRound(float a, float b, float k){
 /* smooth-intersect = -sUnion(-da,-db,k) を展開したもの (エンジン SDF_SINTER と同式) */
 float sInter(float da, float db, float k){
   k = max(k, 1e-6);
-  float h = clamp(0.5 + 0.5*(da-db)/k, 0.0, 1.0);
-  return mix(db, da, h) + k*h*(1.0-h);
+  /* sUnion と同じ理由で max からの差分で書く (-sUnion(-da,-db,k) と同値) */
+  float M = max(da, db);
+  float e = M - min(da, db);
+  float g = clamp(0.5 - 0.5*e/k, 0.0, 0.5);
+  return M - g*e + k*g*(1.0-g);
 }
 float sInterDeep(float a, float b, float k){ return max(sInter(a,b,k), sInterRound(a,b,k)); }
 float sInterCham(float a, float b, float k){
@@ -1405,6 +1436,21 @@ float sSub(float da, float db, float k){
 export function buildProgram(doc, focusSet, opts) {
   /* opts.sweepApprox: sweep 任意断面を近似チューブで出す軽量モード (ドラッグ中用)。
      レイアウトが変わるので呼び側は setParams(collectParams(doc, prog.layout)) も行うこと */
+  /* opts.shadow / opts.ao (既定 true): false なら softShadow / calcAO を**生成しない**。
+     これらは uniform (uShadowOn / uFast) では切れない — HLSL は map の呼び出し箇所を
+     全てインライン展開するので、実行時に使わなくてもコンパイル代は満額かかる。
+     生成時に落とすと map の展開が 4→2 箇所になり、実測 rabbit 11.9s→8.2s (−32%) /
+     scale_test 3.5s→1.8s (−47%)。切替時は再コンパイルが要る (呼び側の責任)。
+     ⚠ AO を切ると接地部・付け根の陰影が浅くなる (rabbit で平均差 1.1/255・最大 107) */
+  const wantShadow = !opts || opts.shadow !== false;
+  const wantAO     = !opts || opts.ao     !== false;
+  /* opts.pick (既定 true): false なら uPick 分岐 (= probe の2つ目の展開) を生成しない。
+     probe は木を**もう一度**インライン展開する上に、計測文が葉ごとに乗るぶん sdObj より
+     本体が大きい。呼び出しは shade() と このピックパスの2箇所なので、片方消すだけで
+     展開総量が約2割減る (rabbit 33KB→26KB / leaf 336KB→267KB。静的集計)。
+     ピックは「クリックした瞬間だけ」必要なので、描画用プログラムからは外し、
+     app.js が要求したときに専用プログラムを焼く (viewer.pickProg)。 */
+  const wantPick   = !opts || opts.pick   !== false;
   const layout = buildLayout(doc, !!(opts && opts.sweepApprox));
   /* 枝刈りガードのバウンディング球は node params の直後 (subSphBase) からパラメータ
      テクスチャに相乗りさせる (emit が guards を埋め、下で parCount を延長)。
@@ -1548,6 +1594,11 @@ uniform float uDepthOn;
 uniform vec2  uDepthRange;   /* (near, far): 深度の白黒正規化レンジ */
 uniform int   uPick;
 uniform vec3  uPickRO, uPickRD;
+/* エディタ床の市松の2色 (アルベド)。窓のトーンマップ col/(1+0.15col) とガンマ 2.2 を
+   通った後の見た目で決めている — 白タイルを 1.0 にすると環境項+拡散で頭打ちになり
+   市松が消えるので、白は 0.85 で止める */
+#define FLOOR_WHITE 0.48
+#define FLOOR_GRAY  0.21
 
 ${PRELUDE}
 ${objFns.join('\n')}
@@ -1568,9 +1619,23 @@ vec3 calcNormal(vec3 p, float t){
      十分小さいとセル毎のファセットが出る。エンジンで 3ボクセルなら消えると実測済み
      (docs/2026-07-21) なので、その値を下限にする。 */
   float h = max(max(3e-4, t * 2e-4), uGridNEps);
-  vec2 e = vec2(1.0, -1.0) * 0.5773 * h;
-  return normalize(e.xyy*map(p+e.xyy).x + e.yyx*map(p+e.yyx).x +
-                   e.yxy*map(p+e.yxy).x + e.xxx*map(p+e.xxx).x);
+  /* 四面体4タップ。**べた書きに戻さないこと** — HLSL は map の呼び出し箇所を全て
+     インライン展開するので、4タップを展開すると巨大な map のコピーが4つ増える
+     (呼び出し4箇所のうち3箇所がここだった)。ループに畳むと1箇所。
+     実測 rabbit.ssq のコールドコンパイル 20.96s → 12.35s (**41%減**,
+     RTX3090/ANGLE D3D11。map 展開1箇所あたり約 2.4s)。
+     方向ベクトルは IQ の定石のビット演算で (1,-1,-1),(-1,-1,1),(-1,1,-1),(1,1,1) を
+     この順に出す = べた書き版と成分も加算順序も同一。ただし HLSL 側の FMA 畳み込みが
+     変わるため画素は完全一致ではない (実測 525x488 で 2ch が 1/255 ずれる)。
+     ※コンパイル時間の計測は getProgramParameter(LINK_STATUS) の**同期呼び出し**で。
+       KHR_parallel_shader_compile のポーリングは粒度が粗く、しかも非表示タブでは
+       setTimeout が絞られて数十秒に化ける (docs/2026-08-24_calcNormal.. 参照)。 */
+  vec3 n = vec3(0.0);
+  for (int i = 0; i < 4; i++) {
+    vec3 k = 0.5773 * h * (2.0*vec3(float(((i+3)>>1)&1), float((i>>1)&1), float(i&1)) - 1.0);
+    n += k * map(p + k).x;
+  }
+  return normalize(n);
 }
 
 vec2 march(vec3 ro, vec3 rd){
@@ -1584,7 +1649,7 @@ vec2 march(vec3 ro, vec3 rd){
   return vec2(t, m);
 }
 
-float softShadow(vec3 ro, vec3 rd, float tmax){
+${wantShadow ? `float softShadow(vec3 ro, vec3 rd, float tmax){
   float res = 1.0, t = 0.03;
   for (int i = 0; i < 48; i++) {
     float h = map(ro + rd * t).x;
@@ -1594,9 +1659,9 @@ float softShadow(vec3 ro, vec3 rd, float tmax){
     if (t > tmax) break;
   }
   return clamp(res, 0.0, 1.0);
-}
+}` : '/* 影OFF: softShadow は生成していない (map の展開1箇所ぶんのコンパイル代を払わない) */'}
 
-float calcAO(vec3 p, vec3 n){
+${wantAO ? `float calcAO(vec3 p, vec3 n){
   float occ = 0.0, sca = 1.0;
   for (int i = 0; i < 5; i++) {
     float h = 0.02 + 0.11 * float(i);
@@ -1605,7 +1670,7 @@ float calcAO(vec3 p, vec3 n){
     sca *= 0.75;
   }
   return clamp(1.0 - 2.2 * occ, 0.0, 1.0);
-}
+}` : '/* AO OFF: calcAO は生成していない (同上) */'}
 
 vec3 shade(vec3 ro, vec3 rd, float t, float m, out float selD){
   vec3 p = ro + rd * t;
@@ -1613,12 +1678,9 @@ vec3 shade(vec3 ro, vec3 rd, float t, float m, out float selD){
   float bd; int bi; vec3 bc; vec4 mc;
   selD = probe(p, (m > 97.5 ? -1 : int(m + 0.5)), bd, bi, bc, mc);
   vec3 alb;
-  if (m > 97.5) {  /* グリッド床 */
+  if (m > 97.5) {  /* グリッド床: 白とグレーの市松のみ (タイル境界の暗い罫線は無し) */
     float ch = mod(floor(p.x) + floor(p.z), 2.0);
-    alb = mix(vec3(0.32), vec3(0.42), ch);
-    vec2 g = abs(fract(p.xz) - 0.5);
-    float ln = smoothstep(0.47, 0.5, max(g.x, g.y));
-    alb = mix(alb, vec3(0.2), ln * 0.6);
+    alb = mix(vec3(FLOOR_GRAY), vec3(FLOOR_WHITE), ch);
   } else if (uPartOn > 0.5 && bi >= 0) {
     alb = bc;   /* パーツ識別色 (ブレンド域は距離比のグラデーション) */
   } else if (uMatOn > 0.5 && mc.a > 1e-7) {
@@ -1626,7 +1688,7 @@ vec3 shade(vec3 ro, vec3 rd, float t, float m, out float selD){
   } else {
     alb = uObjCol[int(m + 0.5)];
   }
-  float ao = uFast > 0.5 ? 1.0 : calcAO(p, n);   /* 操作中はAOスキップ */
+  float ao = ${wantAO ? 'uFast > 0.5 ? 1.0 : calcAO(p, n)' : '1.0'};   /* 操作中はAOスキップ */
   vec3 col = alb * mix(vec3(0.22), uBg + 0.12, 0.55) * 0.55 * ao;  /* 環境項 */
   for (int i = 0; i < 4; i++) {
     if (i >= uNLights) break;
@@ -1635,7 +1697,7 @@ vec3 shade(vec3 ro, vec3 rd, float t, float m, out float selD){
     vec3 l = lv / ld;
     float dif = max(dot(n, l), 0.0);
     float sh = 1.0;
-    if (i == 0 && uShadowOn > 0.5 && uFast < 0.5 && dif > 0.0) sh = softShadow(p + n * 2e-3, l, ld);
+${wantShadow ? '    if (i == 0 && uShadowOn > 0.5 && uFast < 0.5 && dif > 0.0) sh = softShadow(p + n * 2e-3, l, ld);' : ''}
     vec3 h = normalize(l - rd);
     float spe = pow(max(dot(n, h), 0.0), 32.0) * 0.35;
     col += (alb * dif + spe * dif) * uLightCol[i] * sh;
@@ -1705,7 +1767,7 @@ float ndcDepth(vec3 rd, float tHit){
 }
 
 void main(){
-${guardInit}  if (uPick == 1) {
+${guardInit}${wantPick ? `  if (uPick == 1) {
     vec2 h = march(uPickRO, uPickRD);
     int id = -1;
     if (h.y > -0.5 && h.y < 97.5) {
@@ -1717,7 +1779,7 @@ ${guardInit}  if (uPick == 1) {
     fragColor = vec4(mod(enc, 256.0) / 255.0, floor(enc / 256.0) / 255.0, 0.0, 1.0);
     gl_FragDepth = 1.0;
     return;
-  }
+  }` : '  /* ピックは別プログラム (opts.pick=false) — probe の展開1つぶんを払わない */'}
   vec2 uv = (gl_FragCoord.xy * 2.0 - uRes) / uRes.y;
   vec3 rd = normalize(uCamFwd + uFovTan * (uv.x * uCamRight + uv.y * uCamUp));
   float tHit;
@@ -1740,3 +1802,5 @@ ${guardInit}  if (uPick == 1) {
   if (!colors.length) colors.push([0.7, 0.7, 0.7]);
   return { frag, layout, colors, nObj };
 }
+
+

@@ -550,19 +550,90 @@ async function ensureGrids() {
    パラメータを残す。ドラッグ等の updateParams もこの間はスキップし、
    完了時に最新 doc から作り直すので編集は取りこぼさない。 */
 let layoutPending = false;
+/* 影 / AO は uniform では切れない (HLSL が map をインライン展開するのでコンパイル代は
+   実行時のON/OFFに関係なく満額かかる) → **生成時のフラグ**にしている。チェックを
+   変えたら rebuild() が要る = その1回だけ再コンパイル待ちが入る。プログラムキャッシュ
+   (LRU) に両方載るので、以後のトグルは即時。実測 rabbit 11.9s->8.2s / scale_test 3.5s->1.8s。
+   単一情報源はチェックボックスそのもの (状態を二重に持たない) */
+/* シェーダのコンパイル中バッジ。setProgram は KHR_parallel_shader_compile で
+   非同期になり、ノード数と距離関数のインライン展開でシーンによっては十数秒かかる
+   → 何も出さないと「固まった」と誤解される。ステータス行はメッシュ再生成などに
+   上書きされてしまう (実測: 「コンパイル中…」がメッシュの完了メッセージに消された)
+   ので、ビューポート上に独立したバッジを出す。
+   キャッシュ命中時は onDone が同期で走る = 表示→非表示が同一タックで完結し描画されない。 */
+let compileTimer = null;
+function showCompiling(on, note) {
+  const el = $('#compiling');
+  if (!el) return;
+  clearInterval(compileTimer);
+  compileTimer = null;
+  if (!on) { el.hidden = true; return; }
+  if (!el.firstChild) {
+    const b = document.createElement('b');
+    b.textContent = 'シェーダをコンパイル中';
+    const dots = document.createElement('span');
+    dots.className = 'dots';
+    const sub = document.createElement('span');
+    sub.className = 'sub';
+    el.append(b, dots, document.createElement('br'), sub);
+  }
+  const sub = el.querySelector('.sub');
+  const t0 = performance.now();
+  const paint = () => {
+    sub.textContent = ((performance.now() - t0) / 1000).toFixed(1) + ' 秒経過'
+      + (note ? ' / ' + note : '') + '  (ノードが多いほど長くかかります)';
+  };
+  paint();
+  el.hidden = false;
+  compileTimer = setInterval(paint, 100);
+}
+
+function progOpts(extra) {
+  return Object.assign({
+    shadow: !!($('#chkShadow') || {}).checked,
+    ao:     !!($('#chkAO')     || {}).checked,
+    /* 描画用からは uPick 分岐を外す = probe の2つ目のインライン展開を払わない。
+       probe は木をもう一度展開する上に計測文のぶん sdObj より本体が大きく、
+       静的集計で**展開総量の 38〜43%** を占めていた (rabbit 33KB のうち 14KB)。
+       片方消すだけで 19〜21% 減る。ピックは別プログラムに逃がす (下の schedulePickProg)。 */
+    pick: false,
+  }, extra);
+}
+
+/* ── ピック専用プログラム ────────────────────────────────────
+   uPick 分岐だけを持つプログラムを、編集の手が止まってから裏で焼く。
+   クリックするまで要らないので、描画の初回表示を待たせない。
+   未完成のうちは viewer.pick() が描画用プログラムに落ちる (uPick 分岐が無いので
+   -1 = 何も選べない) ため、焼き上がるまでの数秒はピックだけが効かない。 */
+let pickProgTimer = null;
+const PICK_PROG_IDLE_MS = 900;
+function schedulePickProg() {
+  clearTimeout(pickProgTimer);
+  viewer.setPickProgram(null);          /* 古いレイアウトのものは使わない */
+  pickProgTimer = setTimeout(() => {
+    try {
+      const p = buildProgram(doc, null, progOpts({ pick: true }));
+      /* レイアウトは pick の有無で変わらない = 描画用と params を共有できる */
+      viewer.compileAux(p.frag, prog => viewer.setPickProgram(prog));
+    } catch (e) { console.error(e); }
+  }, PICK_PROG_IDLE_MS);
+}
+
 function rebuild() {
   sticky = null;
   scheduleMesh();          /* uniform 超過で早期 return しても メッシュ側は更新する */
   scheduleBlobMesh();      /* native blob は WASM 再メッシュ (GLSL に出ない) */
   refreshObjMeshes();      /* mesh(OBJ) も GLSL に出ない — ラスタ表示を同期 */
+  schedulePickProg();      /* ピック用は手が止まってから裏で焼く */
   try {
-    const prog = buildProgram(doc);
+    const prog = buildProgram(doc, null, progOpts());
     const need = countUniformVectors(prog.frag);
     const max = viewer.maxFragUniformVectors;
     if (max && need > max) {
       /* 焼くと link 失敗で真っ暗になるので焼かない (直前の正常なプレビューを残す) */
       sticky = { msg: uniformOverflowMsg(need, max), err: true };
       setStatus(sticky.msg, true);
+      showCompiling(false);
       return;
     }
     layout = prog.layout;
@@ -573,11 +644,13 @@ function rebuild() {
     const info = (tail) => setStatus(`ノード ${layout.order.length}`
                                      + ` / パラメータ ${layout.parCount} / ${tail}`);
     info('コンパイル中…');
+    showCompiling(true, `ノード ${layout.order.length}`);
     layoutPending = true;
     viewer.setProgram(
       prog.frag,
-      (e) => { console.error(e); setStatus('シェーダエラー: ' + e.message, true); },
+      (e) => { showCompiling(false); console.error(e); setStatus('シェーダエラー: ' + e.message, true); },
       () => {
+        showCompiling(false);
         /* 新プログラムが有効になった今、対応するスロット配置で焼く。
            collectParams は最新 doc を読むのでリンク中の編集も反映される */
         layoutPending = false;
@@ -597,6 +670,7 @@ function rebuild() {
        **前回のビルドの値**なので、古い数字で「コンパイル中…」を潰してしまう。
        確定表示は上の onDone が受け持つ。 */
   } catch (e) {
+    showCompiling(false);
     console.error(e);
     setStatus('シェーダエラー: ' + e.message, true);
   }
@@ -1711,10 +1785,12 @@ function beginGizmoDrag() {
       focusRestore = { bonesEnabled: boneOverlay.enabled, boneOnly: viewer.boneOnly };
       viewer.boneOnly = false;          /* focus は実体をレイマーチ (bones全停止ではない) */
       boneOverlay.setEnabled(true);     /* 残りは骨格で文脈表示 */
-      const prog = buildProgram(doc, focus, { sweepApprox: approx });
+      const prog = buildProgram(doc, focus, progOpts({ sweepApprox: approx }));
       layout = prog.layout;             /* focusSet のみなら layout 不変 (params 流用可) */
       if (approx) viewer.setParams(collectParams(doc, layout));   /* approx はレイアウトが変わる */
-      viewer.setProgram(prog.frag);
+      showCompiling(true, '編集中パーツだけの軽量シェーダ');
+      viewer.setProgram(prog.frag, e => { showCompiling(false); console.error(e); },
+                        () => showCompiling(false));
       focusActive = true;
       sweepApproxActive = approx;
       /* ハイブリッド文脈: focus 外はボーンだけだったのを、キャッシュ済みメッシュが
@@ -1725,10 +1801,12 @@ function beginGizmoDrag() {
   } else if (!focusActive && !sweepApproxActive && approx) {
     focusRestore = { bonesEnabled: boneOverlay.enabled, boneOnly: viewer.boneOnly };
     boneOverlay.setEnabled(true);       /* 経路の制御ポリラインを文脈表示 */
-    const prog = buildProgram(doc, null, { sweepApprox: true });
+    const prog = buildProgram(doc, null, progOpts({ sweepApprox: true }));
     layout = prog.layout;
     viewer.setParams(collectParams(doc, layout));
-    viewer.setProgram(prog.frag);
+    showCompiling(true, 'ドラッグ用の近似シェーダ');
+    viewer.setProgram(prog.frag, e => { showCompiling(false); console.error(e); },
+                      () => showCompiling(false));
     sweepApproxActive = true;
   }
   viewer.requestRender();
@@ -2986,7 +3064,6 @@ function init() {
   $('#btnUndo').onclick = undo;
   $('#btnRedo').onclick = redo;
   $('#selQuality').onchange = e => viewer.setQuality(parseFloat(e.target.value));
-  $('#chkShadow').onchange = e => viewer.setShadow(e.target.checked);
   $('#chkGrid').onchange = e => viewer.setGrid(e.target.checked, 0);
   $('#chkAxis').onchange = e => viewer.setAxis(e.target.checked);
   $('#chkPart').onchange = e => {
@@ -3008,18 +3085,21 @@ function init() {
     const sh = $('#chkShadow');
     if (on) {
       shadowBeforeBones = sh.checked;
-      if (sh.checked) { sh.checked = false; viewer.setShadow(false); }
+      if (sh.checked) { sh.checked = false; viewer.setShadow(false); rebuild(); }
     } else if (shadowBeforeBones != null) {
-      sh.checked = shadowBeforeBones;
-      viewer.setShadow(shadowBeforeBones);
+      const back = shadowBeforeBones;
       shadowBeforeBones = null;
+      if (sh.checked !== back) { sh.checked = back; viewer.setShadow(back); rebuild(); }
     }
   };
   /* ボーン表示中に影を手動で入れ直したらその選択を記憶 (OFF復帰時に尊重) */
   $('#chkShadow').onchange = e => {
     viewer.setShadow(e.target.checked);
     if ($('#chkBones').checked) shadowBeforeBones = e.target.checked;
+    rebuild();   /* 影は生成時フラグ → シェーダを作り直す (初回だけ待ちが入る) */
   };
+  /* AO も同じ理由で生成時フラグ。OFF は接地部/付け根の陰りが浅くなる代わりに速い */
+  $('#chkAO').onchange = () => rebuild();
   $('#btnSavePng').onclick = async () => {
     const blob = await viewer.snapshotPNG();
     if (!blob) { setStatus('PNG 生成に失敗しました', true); return; }

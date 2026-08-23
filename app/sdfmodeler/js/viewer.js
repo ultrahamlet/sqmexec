@@ -1071,13 +1071,62 @@ export class Viewer {
   }
 
   /* クリック位置のレイで GPU ピック → leaf ノード index (なければ -1) */
+  /* 表示を切り替えずに裏でプログラムを焼く (ピック用など)。
+     setProgram と違い this.prog を差し替えないので、描画中の絵が乱れない。
+     KHR_parallel_shader_compile があればポーリング、無ければ同期。 */
+  compileAux(fragSrc, onReady) {
+    const gl = this.gl;
+    if (this._ctxLost || gl.isContextLost()) return;
+    if (!this._vsShared) this._vsShared = this._compile(gl.VERTEX_SHADER, VS);
+    const fs = gl.createShader(gl.FRAGMENT_SHADER);
+    gl.shaderSource(fs, fragSrc);
+    gl.compileShader(fs);
+    const prog = gl.createProgram();
+    gl.attachShader(prog, this._vsShared);
+    gl.attachShader(prog, fs);
+    gl.linkProgram(prog);
+    const finish = () => {
+      if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+        console.error('aux link error: ' + (gl.getProgramInfoLog(prog) || ''));
+        gl.deleteProgram(prog); gl.deleteShader(fs);
+        return;
+      }
+      gl.deleteShader(fs);
+      if (onReady) onReady(prog);
+    };
+    if (this._parallelExt) {
+      const poll = () => {
+        if (this._ctxLost || gl.isContextLost()) { gl.deleteProgram(prog); return; }
+        if (gl.getProgramParameter(prog, this._parallelExt.COMPLETION_STATUS_KHR)) finish();
+        else setTimeout(poll, 16);
+      };
+      poll();
+    } else finish();
+  }
+
+  /* ピック専用プログラム。描画用は opts.pick=false で焼く (probe の展開が1つ減り
+     コンパイルが約2割速い) ので、uPick 分岐はこちらだけが持つ。
+     app が用意していなければ従来どおり描画用プログラムで拾う (機能は落ちない)。 */
+  setPickProgram(prog) {
+    this.pickProg = prog || null;
+    /* ⚠ uniform location は**プログラム毎**。差し替えたらキャッシュを必ず捨てる —
+       残すと新プログラムに古い location を撃ち、uPar が読めず**ピックが黙って
+       全 miss** になる (シーンを開き直すたびに選択できなくなる形で出る)。 */
+    this._pickUni = {};
+  }
+
   pick(clientX, clientY) {
-    if (!this.prog) return -1;
+    const prog = this.pickProg || this.prog;
+    if (!prog) return -1;
     const gl = this.gl;
     const { ro: eye, rd } = this.rayFromScreen(clientX, clientY);
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.pickFbo);
     gl.viewport(0, 0, 1, 1);
-    gl.useProgram(this.prog);
+    gl.useProgram(prog);
+    /* uniform location はプログラム毎 — ピック用に切り替えたら _u のキャッシュを
+       そのプログラムのものにする (取り違えると uPar が読めず全 miss になる) */
+    const savedProg = this.prog, savedUni = this.uni;
+    if (prog !== savedProg) { this.prog = prog; this.uni = this._pickUni || (this._pickUni = {}); }
     this._setCommonUniforms(1, 1);
     gl.uniform1i(this._u('uPick'), 1);
     gl.uniform3fv(this._u('uPickRO'), eye);
@@ -1086,6 +1135,7 @@ export class Viewer {
     const buf = new Uint8Array(4);
     gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, buf);
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    if (prog !== savedProg) { this.prog = savedProg; this.uni = savedUni; }
     this.requestRender();
     return buf[0] + buf[1] * 256 - 1;
   }

@@ -1,10 +1,10 @@
 ﻿{
-    "updated":  "2026-08-23",
+    "updated":  "2026-08-24",
     "platforms":  {
                       "windows-x64":  {
                                           "sqm":  {
-                                                      "commit":  "b0293b4",
-                                                      "subject":  "Revert \"sdfmodeler: 2段コンパイル\" と \"calcNormal ループ化\" — ユーザー指示により差し戻し",
+                                                      "commit":  "dbddd9a",
+                                                      "subject":  "sdfmodeler: probe の2重展開を解消 — ピックを別プログラムへ (展開量 -20%)",
                                                       "bytes":  4986076
                                                   },
                                           "shader_core":  {
@@ -18,7 +18,7 @@
                   },
     "app":  {
                 "sdfmodeler":  {
-                                   "commit":  "b0293b4",
+                                   "commit":  "dbddd9a",
                                    "note":  "sqm/sdfmodeler の追跡ファイルの snapshot。原本は sqm 側"
                                }
             }
