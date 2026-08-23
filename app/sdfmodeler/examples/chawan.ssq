@@ -1,0 +1,12 @@
+(scene
+  (background 0.004 0.004 0.006)
+  (camera (from -2.6755 1.77981 1.65418) (at 0 0.42 0) (up 0 1 0) (fov 30))
+  (object "chawan"
+    (surface (color 0.020 0.019 0.019) (ka 0) (kd 1) (ks 0) (phong 0) (bsdf bsdfraku) (param base-color 0.030 0.026 0.023) (param warm-color 0.042 0.024 0.016) (param clay-color 0.115 0.070 0.050) (param craze-color 0.075 0.055 0.042) (param tea-color 0.090 0.062 0.045) (param low-y 0.05) (param high-y 0.90) (param glaze-y 0.085) (param drip 0.050) (param bead 0.036) (param flow-scale 9.0) (param flow-stretch 7.0) (param flow 0.55) (param mottle 0.60) (param mottle-scale 7.5) (param contrast 3.2) (param rough-matte 0.50) (param rough-wet 0.20) (param rough-clay 0.86) (param speckle 0.48) (param speckle-scale 165) (param thin-warm 0.07) (param age 0.45) (param craze-scale 44.0) (param craze-width 0.011) (param tea 0.55) (param wear 0.55))
+    (displace (amp 0.020) (mode dsl) (shader tebineri) (lipschitz 90) (param asym 0.60) (param asym-freq 1.4) (param facet 0.50) (param facet-freq 5.0) (param steps 6) (param edge 0.36) (param vert 8.0))
+    (sdf (union
+        (lathe (center 0 0.12818 0) (steps 16)
+          (spline 0 -0.02 0.12 -0.016 0.175 0 0.265 0.033 0.355 0.08 0.437 0.148 0.49 0.233 0.518 0.345 0.529 0.468 0.529 0.59 0.526 0.705 0.525 0.792 0.521 0.801 0.512 0.805 0.503 0.801 0.499 0.792 0.492 0.705 0.494 0.59 0.492 0.468 0.478 0.345 0.446 0.233 0.39 0.148 0.3 0.08 0.18 0.033 0 0.051))
+        (lathe (center 0 0 0) (axis 0.143) (steps 16)
+          (spline -0.03 0.012 -0.023 0.002 0.023 0.002 0.03 0.012 0.03 0.095 -0.03 0.095)))))
+)

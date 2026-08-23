@@ -1,0 +1,11 @@
+; repeat3_test.ssq — 1ノードで3次元グリッド (反復3D)。count/spacing を編集して格子を変える。
+(scene
+  (background 0.55 0.62 0.72)
+  (camera (from 5.4 4.6 -7.8) (at 1.3 1.3 1.3) (up 0 1 0) (fov 46))
+  (light (pos 8 12 -8)(intensity 1.35)(color 1 0.97 0.9)(radius 0.6))
+  (light (pos -7 4 -5)(intensity 0.4)(color 0.65 0.8 1.0))
+  (object "grid"
+    (surface (color 0.62 0.74 0.95)(ka 0.2)(kd 0.78)(ks 0.4)(phong 45)(roi 1.0))
+    (sdf
+      (repeat3 (count 3 3 3) (spacing 1.3 1.3 1.3)
+        (round (r 0.08) (box (center 0 0 0) (size 0.34 0.34 0.34)))))))

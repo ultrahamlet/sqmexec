@@ -1,0 +1,48 @@
+(scene
+  (background 0.3 0.28 0.26)
+  (camera (from 1.08167 2.53329 -4.65669) (at 0 1.5 0) (up 0 1 0) (fov 40))
+  (light (pos -3.5 4.5 -4.5) (intensity 1.25) (color 1.0 0.93 0.82) (radius 0.9))
+  (light (pos 4 2.5 -3.5) (intensity 0.35) (color 0.75 0.82 1.0) (radius 0.7))
+  (light (pos 0 5.5 -1.5) (intensity 0.3) (color 1 0.98 0.92) (radius 0.8))
+  (object "floor"
+    (surface (color 0.45 0.32 0.18) (ka 0.22) (kd 0.72) (ks 0.12) (phong 0) (roi 1.0) (shader planks) (param light-wood 0.52 0.36 0.20) (param dark-wood 0.20 0.11 0.05) (param plank-width 0.5) (param plank-length 3.2) (param ring-density 16.0) (param seam-width 0.05) (param plank-vary 0.28) (param grain-streak 0.55) (param coat 0.15) (param bump 0.5) (param Ks 0.12) (param roughness 0.15))
+    (sdf (plane (center 0 0 0))))
+  (object "bear"
+    (surface (color 0.32 0.18 0.10) (ka 0.24) (kd 0.52) (ks 0.10) (phong 0) (roi 1.0) (shader velvet) (param sheen-color 0.62 0.42 0.26) (param edge-power 2.2) (param sheen 1.9) (param backscatter 0.25) (param nap 0.55) (param nap-scale 22) (param body-dark 0.45) (param sheen-lit 0.6) (param roughness 0.3))
+    (displace (amp 0.026) (freq 20) (octaves 3) (mode turbulence))
+    (sdf (translate (t 0 -0.14 0)
+        (smooth-union (k 0.08)
+          (ellipsoid (center 0 1.05 0) (radii 0.8 0.95 0.7))
+          (smooth-union (k 0.08)
+            (ellipsoid (center 0 2.35 0) (radii 0.62 0.58 0.6))
+            (smooth-union (k 0.08)
+              (ellipsoid (center 0 2.2 -0.5) (radii 0.3 0.22 0.22))
+              (smooth-union (k 0.08)
+                (mirror (normal -1 0 0) (sphere (center 0.42 2.85 0.03) (radius 0.23)))
+                (smooth-union (k 0.08)
+                  (mirror (normal -1 0 0) (capsule (a 0.6 1.7 -0.05) (b 1.02 1 -0.38) (radius 0.2)))
+                  (smooth-union (k 0.08)
+                    (mirror (normal -1 0 0) (capsule (a 0.45 0.5 -0.1) (b 0.82 0.3 -0.55) (radius 0.28)))
+                    (sphere (center 0 0.7 0.68) (radius 0.17)))))))))))
+  (object "bear-cream"
+    (surface (color 0.72 0.58 0.40) (ka 0.24) (kd 0.52) (ks 0.10) (phong 0) (roi 1.0) (shader velvet) (param sheen-color 0.95 0.85 0.65) (param edge-power 2.2) (param sheen 1.9) (param backscatter 0.25) (param nap 0.55) (param nap-scale 22) (param body-dark 0.45) (param sheen-lit 0.6) (param roughness 0.3))
+    (displace (amp 0.026) (freq 20) (octaves 3) (mode turbulence))
+    (sdf (translate (t 0 -0.14 0)
+        (union
+          (ellipsoid (center 0 2.18 -0.56) (radii 0.27 0.19 0.17))
+          (union
+            (mirror (normal -1 0 0) (ellipsoid (center 0.42 2.85 -0.16) (radii 0.12 0.13 0.08)))
+            (ellipsoid (center 0 1 -0.6) (radii 0.45 0.58 0.16)))))))
+  (object "bear-dark"
+    (surface (color 0.03 0.025 0.02) (ka 0.1) (kd 0.5) (ks 0.5) (phong 0) (roi 1.0) (shader pbrsurface) (param Ka 0.12) (param Kd 0.8) (param Ks 0.7) (param roughness 0.18) (param metallic 0.0) (param Kr 0.35))
+    (sdf (translate (t 0 -0.14 0)
+        (union
+          (sphere (center 0 2.25 -0.73) (radius 0.09))
+          (mirror (normal -1 0 0) (sphere (center 0.21 2.47 -0.52) (radius 0.07)))))))
+  (object "wall"
+    (surface (color 0.93 0.89 0.80) (ka 0.32) (kd 0.8) (ks 0) (phong 0) (roi 1.0) (shader wallpaper) (param base-color 0.90 0.86 0.78) (param stripe-color 0.80 0.68 0.62) (param stripe-width 0.62) (param stripe-soft 0.04))
+    (sdf (box (center 0 2.5 2) (size 4.5 2.6 0.08))))
+  (object "baseboard"
+    (surface (color 0.93 0.92 0.89) (ka 0.28) (kd 0.8) (ks 0.35) (phong 0) (roi 1.0) (shader pbrsurface) (param Ka 0.25) (param Kd 0.85) (param Ks 0.5) (param roughness 0.35) (param metallic 0.0) (param Kr 0.0))
+    (sdf (box (center 0 0.1332 1.9) (size 4.5 0.324674 0.035))))
+)

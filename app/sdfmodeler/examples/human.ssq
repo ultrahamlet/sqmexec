@@ -1,0 +1,115 @@
+; human.ssq — カプセル人体ボーン構造 (arm.ssq と同じ関節チェーン方式)
+;   各関節 = translate(親フレームの関節位置へ) → rotate(関節角, pivot=関節原点)
+;            → smooth-union(カプセル + 次の関節...)。
+;   ポーズ編集: 関節の rotate を選んで回転ギズモ (E)。pivot は関節原点に設定済み。
+;   階層: 骨盤(root) ─ 背骨 ─ 胸(肩バー) ─ 首 ─ 頭
+;                     │                └ 左肩/右肩 ─ 上腕 ─ 前腕 ─ 手
+;                     └ 左股/右股 ─ 腿 ─ 脛 ─ 足 (つま先 -z = 正面)
+;   色分け: 胴=グレー / 頭=肌色 / 左=青系 / 右=赤系 (リグ編集の左右識別用)
+(scene
+  (background 0.25 0.72 0.75)
+  (camera (from 2.6 1.7 -3.6) (at 0 0.95 0) (up 0 1 0) (fov 42))
+  (light (pos 6 8 -6) (intensity 1.35) (color 1.0 0.95 0.85) (radius 0.6))
+  (light (pos -6 3 -3) (intensity 0.35) (color 0.7 0.8 1.0))
+  (light (pos 0 8 5) (intensity 0.3) (color 1 1 1))
+  (object "ground"
+    (surface (color 0.75 0.68 0.55) (ka 0.3) (kd 0.8) (ks 0.08) (phong 8) (roi 1.0))
+    (sdf (plane (center 0 0 0))))
+  (object "human"
+    (surface (color 0.7 0.7 0.72) (ka 0.24) (kd 0.8) (ks 0.35) (phong 32) (roi 1.0))
+    (sdf (translate (t 0 1.0 0)                       ; ── root: 骨盤 (全身の平行移動)
+      (rotate (deg 0 0 0 0 0 0)                       ; ── root 姿勢 (全身の向き)
+        (smooth-union (k 0.04)
+          (mcolor (c 0.78 0.74 0.68)                  ; 骨盤
+            (capsule (a -0.08 0 0) (b 0.08 0 0) (radius 0.105)))
+
+          ; ══ 背骨 → 胸 → 首 → 頭 ══
+          (translate (t 0 0.06 0)
+            (rotate (deg 0 0 0 0 0 0)                 ; 腰関節 (前屈/側屈/捻り)
+              (smooth-union (k 0.04)
+                (mcolor (c 0.78 0.74 0.68)            ; 背骨
+                  (capsule (a 0 0 0) (b 0 0.32 0) (radius 0.085)))
+                (translate (t 0 0.32 0)
+                  (rotate (deg 0 0 0 0 0 0)           ; 胸関節
+                    (smooth-union (k 0.04)
+                      (mcolor (c 0.78 0.74 0.68)      ; 肩バー (胸)
+                        (capsule (a -0.16 0 0) (b 0.16 0 0) (radius 0.09)))
+
+                      ; ── 首 → 頭 ──
+                      (translate (t 0 0.05 0)
+                        (rotate (deg 0 0 0 0 0 0)     ; 首関節
+                          (smooth-union (k 0.03)
+                            (mcolor (c 0.9 0.78 0.66)
+                              (capsule (a 0 0 0) (b 0 0.09 0) (radius 0.05)))
+                            (translate (t 0 0.09 0)
+                              (rotate (deg 0 0 0 0 0 0)   ; 頭関節 (うなずき/首振り)
+                                (mcolor (c 0.9 0.78 0.66)
+                                  (capsule (a 0 0.03 0) (b 0 0.15 0) (radius 0.105))))))))
+
+                      ; ── 左腕 (x+ 側, 青系) ──
+                      (translate (t 0.19 0 0)
+                        (rotate (deg 0 0 10 0 0 0)    ; 左肩 (A ポーズ: 外側へ)
+                          (smooth-union (k 0.03)
+                            (mcolor (c 0.35 0.55 0.85)
+                              (capsule (a 0 0 0) (b 0 -0.28 0) (radius 0.05)))
+                            (translate (t 0 -0.28 0)
+                              (rotate (deg -12 0 0 0 0 0)   ; 左肘 (x=曲げ)
+                                (smooth-union (k 0.03)
+                                  (mcolor (c 0.42 0.62 0.9)
+                                    (capsule (a 0 0 0) (b 0 -0.26 0) (radius 0.042)))
+                                  (translate (t 0 -0.26 0)
+                                    (rotate (deg 0 0 0 0 0 0)   ; 左手首
+                                      (mcolor (c 0.5 0.7 0.95)
+                                        (capsule (a 0 0 0) (b 0 -0.09 0) (radius 0.04)))))))))))
+
+                      ; ── 右腕 (x- 側, 赤系) ──
+                      (translate (t -0.19 0 0)
+                        (rotate (deg 0 0 -10 0 0 0)   ; 右肩 (A ポーズ: 外側へ)
+                          (smooth-union (k 0.03)
+                            (mcolor (c 0.85 0.42 0.38)
+                              (capsule (a 0 0 0) (b 0 -0.28 0) (radius 0.05)))
+                            (translate (t 0 -0.28 0)
+                              (rotate (deg -12 0 0 0 0 0)   ; 右肘
+                                (smooth-union (k 0.03)
+                                  (mcolor (c 0.9 0.5 0.44)
+                                    (capsule (a 0 0 0) (b 0 -0.26 0) (radius 0.042)))
+                                  (translate (t 0 -0.26 0)
+                                    (rotate (deg 0 0 0 0 0 0)   ; 右手首
+                                      (mcolor (c 0.95 0.58 0.5)
+                                        (capsule (a 0 0 0) (b 0 -0.09 0) (radius 0.04)))))))))))
+                    ))))))
+
+          ; ══ 左脚 (x+ 側, 青系) ══
+          (translate (t 0.10 -0.06 0)
+            (rotate (deg 0 0 0 0 0 0)                 ; 左股関節
+              (smooth-union (k 0.035)
+                (mcolor (c 0.3 0.48 0.75)
+                  (capsule (a 0 0 0) (b 0 -0.43 0) (radius 0.07)))
+                (translate (t 0 -0.43 0)
+                  (rotate (deg 0 0 0 0 0 0)           ; 左膝 (x=曲げ)
+                    (smooth-union (k 0.035)
+                      (mcolor (c 0.36 0.55 0.82)
+                        (capsule (a 0 0 0) (b 0 -0.41 0) (radius 0.055)))
+                      (translate (t 0 -0.41 0)
+                        (rotate (deg 0 0 0 0 0 0)     ; 左足首
+                          (mcolor (c 0.44 0.62 0.88)
+                            (capsule (a 0 -0.05 0.02) (b 0 -0.05 -0.13) (radius 0.045)))))))))))
+
+          ; ══ 右脚 (x- 側, 赤系) ══
+          (translate (t -0.10 -0.06 0)
+            (rotate (deg 0 0 0 0 0 0)                 ; 右股関節
+              (smooth-union (k 0.035)
+                (mcolor (c 0.75 0.36 0.32)
+                  (capsule (a 0 0 0) (b 0 -0.43 0) (radius 0.07)))
+                (translate (t 0 -0.43 0)
+                  (rotate (deg 0 0 0 0 0 0)           ; 右膝
+                    (smooth-union (k 0.035)
+                      (mcolor (c 0.82 0.44 0.38)
+                        (capsule (a 0 0 0) (b 0 -0.41 0) (radius 0.055)))
+                      (translate (t 0 -0.41 0)
+                        (rotate (deg 0 0 0 0 0 0)     ; 右足首
+                          (mcolor (c 0.9 0.52 0.44)
+                            (capsule (a 0 -0.05 0.02) (b 0 -0.05 -0.13) (radius 0.045)))))))))))
+        ))))
+)
+)

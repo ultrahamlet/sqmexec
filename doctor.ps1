@@ -11,28 +11,46 @@ Write-Host "sqm 実行環境の診断" -ForegroundColor Cyan
 Write-Host "workspace: $($e.Workspace)"
 Write-Host ""
 
-# ── 1. リポジトリ ───────────────────────────────────────────
-Write-Host "[1] リポジトリ"
+# ── 0. 使う実行ファイル (同梱バイナリだけでも動く) ──────────
+Write-Host "[0] 実行ファイル"
+if ($e.BinarySource -eq 'bundled') {
+    Write-Host "  種別 同梱バイナリ (sqmexec/bin) — ソース不要で実行できます" -ForegroundColor Cyan
+} else {
+    Write-Host "  種別 ソースからビルドした sqm/dist (同梱より優先)" -ForegroundColor Cyan
+}
+$vj = Join-Path $e.BundleDir '..\VERSION.json'
+if (Test-Path $vj) {
+    $v = Get-Content $vj -Raw | ConvertFrom-Json
+    $w = $v.platforms.'windows-x64'
+    if ($w) { Write-Host "  同梱 sqm=$($w.sqm.commit) / shader.core=$($w.shader_core.commit)  (更新 $($v.updated))" }
+}
+
+# ── 1. リポジトリ (ソースからビルドする場合のみ必要) ────────
+Write-Host ""
+Write-Host "[1] リポジトリ (ソースからビルドする場合のみ必要)"
+$srcNeeded = ($e.BinarySource -eq 'built')
 foreach ($r in @(
-    @{n='sqm';     p=$e.SqmRepo;    url='https://github.com/ultrahamlet/sqm.git';    need=$true},
-    @{n='dr_sbcl'; p=$e.DrSbclRepo; url='https://github.com/ultrahamlet/dr_sbcl.git';need=$true},
-    @{n='vclay';   p=$e.VclayRepo;  url='https://github.com/ultrahamlet/vclay.git';  need=$false})) {
+    @{n='sqm';     p=$e.SqmRepo;    url='https://github.com/ultrahamlet/sqm.git'},
+    @{n='dr_sbcl'; p=$e.DrSbclRepo; url='https://github.com/ultrahamlet/dr_sbcl.git'},
+    @{n='vclay';   p=$e.VclayRepo;  url='https://github.com/ultrahamlet/vclay.git'})) {
     if (Test-Path $r.p) {
         $branch = git -C $r.p rev-parse --abbrev-ref HEAD 2>$null
         $head   = git -C $r.p log --oneline -1 2>$null
         Write-Ok "$($r.n)  [$branch] $head"
-    } elseif ($r.need) {
-        Write-Bad "$($r.n) が無い"
-        $problems += "git clone $($r.url) `"$($r.p)`""
     } else {
-        Write-Warn2 "$($r.n) が無い (blob エディタ ssq_edit 用。sqm のビルドには不要)"
+        # 同梱バイナリで実行するだけなら無くてよい (ソース非公開の配布モデル)
+        Write-Host "  --   $($r.n) 無し (実行だけなら不要。ビルドするなら: git clone $($r.url))" -ForegroundColor DarkGray
     }
 }
 
-# ── 2. ツールチェイン ───────────────────────────────────────
+# ── 2. ツールチェイン (ビルドする場合のみ必要) ──────────────
+# ⚠ 実行だけなら丸ごと不要。sqm.exe / shader.core は静的リンクで、
+#   Windows 標準の UCRT だけで動く (MSYS2 無しの最小 PATH で実測確認済み)
 Write-Host ""
-Write-Host "[2] ツールチェイン"
-if ($e.Ucrt64Bin -and (Test-Path (Join-Path $e.Ucrt64Bin 'gcc.exe'))) {
+Write-Host "[2] ツールチェイン (ソースからビルドする場合のみ必要)"
+if (-not (Test-Path $e.SqmRepo)) {
+    Write-Host "  --   sqm リポジトリが無いので検査を省略 (同梱バイナリで実行する構成)" -ForegroundColor DarkGray
+} elseif ($e.Ucrt64Bin -and (Test-Path (Join-Path $e.Ucrt64Bin 'gcc.exe'))) {
     $v = (& (Join-Path $e.Ucrt64Bin 'gcc.exe') --version | Select-Object -First 1)
     Write-Ok "gcc  $v"
     # ⚠ 「gcc.exe はあるのに cc1.exe が DLL を解決できない」= 原因を指さない失敗の温床
@@ -86,7 +104,9 @@ Write-Host ""
 Write-Host "[4] 実地テスト"
 if ((Test-Path $e.SqmExe) -and (Test-Path $e.ShaderCore)) {
     Set-SqmEnvVars $e
-    $scene = Join-Path $e.SqmRepo 'scenes\bear_blob.ssq'
+    # 同梱の smoke.ssq を優先 (sqm リポジトリが無い配布先でも実地テストできる)
+    $scene = Join-Path $PSScriptRoot 'scenes\smoke.ssq'
+    if (-not (Test-Path $scene)) { $scene = Join-Path $e.SqmRepo 'scenes\bear_blob.ssq' }
     if (-not (Test-Path $scene)) {
         $scene = Get-ChildItem (Join-Path $e.SqmRepo 'scenes') -Filter *.ssq -ErrorAction SilentlyContinue |
                  Select-Object -First 1 -ExpandProperty FullName

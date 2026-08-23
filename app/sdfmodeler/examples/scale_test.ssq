@@ -1,0 +1,26 @@
+; scale_test.ssq — スケール(拡縮)ラップ。部分木(3球のグループ)を丸ごと拡縮。
+;   ・左: 等倍  ・中: 一様 1.5倍  ・右: 非一様 (x1.8 y0.6 z1)
+(scene
+  (background 0.55 0.62 0.72)
+  (camera (from 0 2.6 -8.5) (at 0 0.2 0) (up 0 1 0) (fov 46))
+  (light (pos 8 12 -8)(intensity 1.3)(color 1 0.97 0.9)(radius 0.6))
+  (light (pos -7 4 -5)(intensity 0.4)(color 0.65 0.8 1.0))
+  (object "grp"
+    (surface (color 0.7 0.78 0.95)(ka 0.2)(kd 0.8)(ks 0.4)(phong 45)(roi 1.0))
+    (sdf
+      (union
+        (translate (t -3.2 0 0)
+          (smooth-union (k 0.25)
+            (sphere (center 0 0.4 0)(radius 0.5))
+            (sphere (center 0 -0.4 0)(radius 0.6))))
+        (union
+          (translate (t 0 0 0)
+            (scale (s 1.5)
+              (smooth-union (k 0.25)
+                (sphere (center 0 0.4 0)(radius 0.5))
+                (sphere (center 0 -0.4 0)(radius 0.6)))))
+          (translate (t 3.4 0 0)
+            (scale (s 1.8 0.6 1)
+              (smooth-union (k 0.25)
+                (sphere (center 0 0.4 0)(radius 0.5))
+                (sphere (center 0 -0.4 0)(radius 0.6))))))))))

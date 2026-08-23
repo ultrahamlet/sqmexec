@@ -1,0 +1,26 @@
+; frog.ssq — MagicaCSG 由来 "SDF frog" を sqm SDF へ移植 (gen_frog.py, time=0)。
+;   translate/rotate-mat/mirror/smooth-subtract の関節階層デモ。
+;   ./sqm -i ../scenes/frog.ssq -o /tmp/frog.png -x 800 -y 600 -A 2 -s 2 -O 8 -T aces
+(scene
+  (background 0.25 0.55 0.62)
+  (camera (from 0 1.5 -16) (at 0 -1.0 0) (up 0 1 0) (fov 42))
+  (light (pos 8 7 -6)(intensity 1.55)(color 1.0 0.96 0.86)(radius 0.6))
+  (light (pos -7 3 -4)(intensity 0.40)(color 0.6 0.8 1.0)(radius 0.6))
+  (light (pos 0 9 4)(intensity 0.35)(color 0.8 0.95 1.0))
+  (object "water"
+    (surface (color 0.04 0.16 0.18)(ka 0.25)(kd 0.55)(ks 0.9)(phong 0)(kt 0)(roi 1.0)(shader ripples)
+             (param water-color 0.03 0.15 0.17)(param crest-color 0.14 0.36 0.38)
+             (param freq 2.6)(param amp 0.7)(param phase 0.0)(param falloff 0.10)
+             (param center-x 0)(param center-z 0)
+             (param fres-tint 0.6)(param sky-color 0.25 0.55 0.62)
+             (param Kr 0.5)(param roughness 0.012))
+    (sdf (plane (center 0 -5.2 0))))
+  (object "frog"
+    (surface (color 0.10 0.42 0.22)(ka 0.26)(kd 0.82)(ks 0.38)(phong 0)(roi 1.0)(shader frog)
+             (param back-color 0.06 0.27 0.10)(param belly-color 0.60 0.74 0.34)
+             (param spot-color 0.02 0.11 0.04)(param sss-color 0.50 0.72 0.26)
+             (param spot-scale 2.8)(param spot-amp 2.6)
+             (param low-y -1.8)(param high-y 0.6)(param sss 0.35)
+             (param bump-amp 1.8)(param bump-scale 9.0)(param roughness 0.05))
+    (sdf (rotate (deg 0 180 0) (rotate-mat 1 0 0 0 0 1 0 -1 0 (union (smooth-subtract (k 0.05) (translate (t 0 0.493172 3.01572) (ellipsoid (center 0 0 0)(radii 1.99929 1.97652 1.28))) (translate (t 0 -0.876456 3.01572) (ellipsoid (center 0 0 0)(radii 1.33164 1.29976 0.572888)))) (union (mirror (normal -1 0 0) (smooth-subtract (k 0.05) (translate (t 1.23772 0.467108 4.0436) (ellipsoid (center 0 0 0)(radii 0.625824 0.357147 0.8914))) (translate (t 1.186 0.2179 4.0436) (ellipsoid (center 0 0 0)(radii 0.4139 0.357147 0.66314))))) (union (mirror (normal -1 0 0) (translate (t 1.23772 0.467108 4.0436) (ellipsoid (center 0 0 0)(radii 0.39685 0.357147 0.507432)))) (union (translate (t 0 0.951508 0.05504) (ellipsoid (center 0 0 0)(radii 1.72792 1.4785 2.16554))) (translate (t 0 0.493172 3.01572) (mirror (normal -1 0 0) (union (rotate-mat 1 0 0 0 0 1 0 -1 0 (translate (t 1.67 2.32 0) (rotate-mat 2.67949e-08 1 0 -1 2.67949e-08 0 0 0 1 (smooth-union (k 0.12) (capsule (a 0 0 0)(b 0 1.6905 0)(radius 0.383695)) (translate (t 0 2.03 0) (rotate-mat 2.67949e-08 1 0 -1 2.67949e-08 0 0 0 1 (smooth-union (k 0.12) (capsule (a 0 0 0)(b 0 1.44445 0)(radius 0.383695)) (translate (t 0 1.83 0) (smooth-union (k 0.12) (capsule (a 0 0 0)(b 0 0.319634 0)(radius 0.47)) (smooth-union (k 0.12) (translate (t 0 0.73 0) (capsule (a 0 0 0)(b 0 1.21 0)(radius 0.147221))) (smooth-union (k 0.12) (translate (t -0.25 0.82 0) (rotate-mat 0.866025 -0.5 0 0.5 0.866025 0 0 0 1 (capsule (a 0 0 0)(b 0 0.93 0)(radius 0.15)))) (smooth-union (k 0.12) (translate (t 0.28 0.59 0) (rotate-mat 0.939693 0.34202 0 -0.34202 0.939693 0 0 0 1 (capsule (a 0 0 0)(b 0 0.93 0)(radius 0.15)))) (translate (t 0.13 0.03 0) (rotate-mat 0.652231 0.758021 0 -0.758021 0.652231 0 0 0 1 (capsule (a 0 0 0)(b 0 0.93 0)(radius 0.15)))))))))))))))) (rotate-mat 1 0 0 0 0 1 0 -1 0 (translate (t 0.82 4.86 0) (rotate-mat 0.281538 0.95955 0 -0.95955 0.281538 0 0 0 1 (smooth-union (k 0.12) (capsule (a 0 0 0)(b 0 1.6905 0)(radius 0.383695)) (translate (t 0 2.2 0) (rotate-mat 0.951056 -0.309018 0 0.309018 0.951056 0 0 0 1 (smooth-union (k 0.12) (capsule (a 0 0 0)(b 0 1.44445 0)(radius 0.383695)) (translate (t 0 1.99 0) (smooth-union (k 0.12) (capsule (a 0 0 0)(b 0 0.319634 0)(radius 0.477884)) (smooth-union (k 0.12) (translate (t 0 0.53 0) (rotate-mat 1 0 0 0 0.766045 0.642788 0 -0.642788 0.766045 (capsule (a 0 0 0)(b 0 1.13 0)(radius 0.147221)))) (smooth-union (k 0.12) (translate (t 0.09 0.51 0) (rotate-mat 0.866025 0.5 0 -0.469846 0.813798 0.34202 0.17101 -0.296198 0.939693 (capsule (a 0 0 0)(b 0 1 0)(radius 0.15)))) (smooth-union (k 0.12) (translate (t 0.32 0.31 0) (rotate-mat 0.766045 0.642788 0 -0.633022 0.754407 0.173648 0.111619 -0.133022 0.984808 (capsule (a 0 0 0)(b 0 0.93 0)(radius 0.15)))) (translate (t 0.19 0.49 0) (rotate-mat 0.505883 -0.862602 0 0.862602 0.505883 0 0 0 1 (capsule (a 0 0 0)(b 0 0.93 0)(radius 0.15)))))))))))))))))))))))))))
+)

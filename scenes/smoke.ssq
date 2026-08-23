@@ -1,0 +1,29 @@
+; smoke.ssq — sqmexec 自身の動作確認用シーン (sqm 本体リポジトリが無くても動く)
+;
+; doctor が実地テストに使う。plastic は .lisp 定義の DR シェーダーなので、
+; これが正しく塗られる = shader.core が読めている、の確認になる。
+; (shader.core が読めていないと同じ絵が「ネイティブ材質」で塗られ、
+;  ハイライトの出方が変わる。判定は stderr の [DR] shader bridge ready で行う)
+
+(scene
+  (background 0.10 0.12 0.16)
+  (camera (from 0 1.3 -4.2) (at 0 0.55 0) (up 0 1 0) (fov 32))
+
+  (light (pos  3.0 4.5 -3.5) (intensity 1.25) (color 1.00 0.97 0.92) (radius 0.4))
+  (light (pos -2.5 2.0  1.5) (intensity 0.35) (color 0.65 0.78 1.00) (radius 0.8))
+
+  (object "floor"
+    (surface (color 0.30 0.31 0.33) (ka 0.18) (kd 0.72) (ks 0.05) (phong 12))
+    (sdf (plane (center 0 0 0) (normal 0 1 0) (offset 0))))
+
+  (object "ball"
+    (surface (color 0.82 0.32 0.22) (ka 0.12) (kd 0.78) (ks 0.35) (phong 45)
+             (shader plastic) (param Ks 0.35) (param roughness 0.18))
+    (sdf (sphere (center -0.75 0.55 0) (radius 0.55))))
+
+  (object "torus"
+    (surface (color 0.35 0.55 0.85) (ka 0.12) (kd 0.72) (ks 0.30) (phong 60)
+             (shader plastic) (param Ks 0.30) (param roughness 0.22))
+    (sdf (rotate (deg -25 0 0)
+           (torus (center 0.8 0.55 0) (major 0.42) (minor 0.16)))))
+)

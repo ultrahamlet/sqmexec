@@ -1,0 +1,36 @@
+; ancient_jar.ssq — 古代土器の壺 (漢代風の瓜形壺)。sdfmodeler の回転体(lathe)でモデリング。
+;   開シェル lathe: 開いた輪郭(r,y)を y軸回転 + thick で肉厚の器 → 開口部(口)が出る。
+;   輪郭 = 底(小さな高台) → 膨らんだ胴 → 肩 → 細い頸 → 外反する口縁(everted rim)。
+;   ※ 実物の縦の稜(瓜のような縦筋)は回転体では出ない(軸対称)。silhouette を回転体で再現。
+;   材質 = 無釉の赤褐色テラコッタ(マット)。
+;   ./sqm -i ../scenes/... -o /tmp/jar.png -x 720 -y 760 -A 3 -s 2 -O 4 -D 1
+(scene
+  (background 0.91 0.89 0.88)
+  (camera (from 0 1.55 3.5) (at 0 0.55 0) (up 0 1 0) (fov 42))
+  (light (pos -5 7 5) (intensity 1.30) (color 1.0 0.96 0.90) (radius 0.7))
+  (light (pos  6 3 3) (intensity 0.40) (color 0.80 0.86 1.0) (radius 0.5))
+  (light (pos  0 6 -6) (intensity 0.28) (color 1.0 0.95 0.88))
+
+  ; 背景の敷き (白いシームレス床)
+  (object "floor"
+    (surface (color 0.90 0.89 0.88) (ka 0.55) (kd 0.55) (ks 0.05) (phong 20) (shader plastic))
+    (mesh (file "/Users/user/Projects/sqm/assets/ground.obj") (pos 0 0 0) (scale 9 1 9) (rot 0 0 0)))
+
+  ; 壺 (回転体 開シェル) — テラコッタ
+  (object "ancient_jar"
+    (surface (color 0.56 0.33 0.25) (ka 0.24) (kd 0.90) (ks 0.03) (phong 8))
+    (sdf
+      (lathe (center 0 0 0) (thick 0.038) (steps 30)
+        (spline
+          0.00 0.04
+          0.26 0.02
+          0.32 0.13
+          0.48 0.33
+          0.60 0.60
+          0.57 0.82
+          0.42 0.99
+          0.31 1.10
+          0.31 1.19
+          0.40 1.30
+          0.43 1.35))))
+)

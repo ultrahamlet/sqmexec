@@ -6,8 +6,12 @@ param([int]$Port = 8642, [switch]$NoBrowser)
 . "$PSScriptRoot\lib\common.ps1"
 
 $e = Get-SqmEnv
+# 探索順は実行ファイルと同じ規則: ソースがあればそちら (常に最新)、
+# 無ければ sqmexec 同梱の snapshot (配布先)
 $dir = Join-Path $e.SqmRepo 'sdfmodeler'
-if (-not (Test-Path $dir)) { throw "sdfmodeler が無い: $dir — doctor.ps1 を実行" }
+if (-not (Test-Path $dir)) { $dir = Join-Path $PSScriptRoot 'app\sdfmodeler' }
+if (-not (Test-Path $dir)) { throw "sdfmodeler が見つからない — doctor.ps1 を実行" }
+Write-Host "app: $dir" -ForegroundColor DarkGray
 
 $py = (Get-Command python -ErrorAction SilentlyContinue).Source
 if (-not $py) { $py = (Get-Command python3 -ErrorAction SilentlyContinue).Source }

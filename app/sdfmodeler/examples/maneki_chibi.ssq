@@ -1,0 +1,169 @@
+; maneki_chibi.ssq — img2threejs の sculpt spec から生成
+;   generator: tools/spec2ssq.py   spec: maneki_chibi.json
+;   target: Maneki-neko (chibi, three-view illustration)   suitability: pass
+;   components 56 / materials 15
+;
+; 上流 (vendor/img2threejs, Apache-2.0) は spec から Three.js を吐く。これはその
+; sqm バックエンド出力。変換規約と写せないものは tools/spec2ssq.py の docstring 参照。
+;   ! 不可視 (opacity≈0) の材質を持つ 1個を除外した = spec のコンテナ部品: root
+;
+;   cd dist && ./sqm -i ../scenes/maneki_chibi.ssq -o /tmp/out.png -x 900 -y 700 -A 2 -s 2 -O 6 -D 2 -T aces
+(scene
+  (background 0.62 0.68 0.76)
+  (camera (from 1.563937 1.636473 2.413301) (at -0.068223 0.711887 0.082335) (up 0 1 0) (fov 38))
+
+  (light (pos -3.35945 4.601518 2.475954) (intensity 1.55) (color 1.00 0.97 0.92) (radius 0.170973))
+  (light (pos 4.12061 1.908696 2.775157) (intensity 0.42) (color 0.78 0.85 1.00) (radius 0.284955))
+  (light (pos 0.829384 2.806304 -4.405702) (intensity 0.34) (color 1.00 0.95 0.88) (radius 0.213716))
+
+  (object "porcelain"
+    (surface (color 0.956863 0.937255 0.901961) (ka 0.2) (kd 0.86) (ks 0.294) (phong 67) (roi 1.0)
+      (shader plastic)
+      (param Ka 0.2) (param Kd 0.86) (param Ks 0.294) (param roughness 0.16))
+    (sdf (smooth-union (k 0.025)
+      (lathe (center 0 0 0) (spline 0.0001 0 0.04 0 0.27 0.008 0.352 0.045 0.398 0.115 0.414 0.21 0.408 0.33 0.38 0.45 0.33 0.56 0.278 0.64 0.243 0.7 0.232 0.735 0.0001 0.735) (steps 30))
+      (translate (t 0 1.022 0.01) (ellipsoid (center 0 0 0) (radii 0.375 0.33 0.352)))
+      (translate (t -0.215 1.152 -0.012) (rotate-mat 0.850565 0.281868 -0.443948 -0.257283 0.959329 0.116159 0.458634 0.01542 0.888492 (round (r 0.018) (extrude (center 0 0 0.041) (depth 0.041) (spline -0.145 0 -0.1434 0.0213 -0.1407 0.0417 -0.1371 0.0613 -0.1324 0.08 -0.1266 0.0979 -0.1199 0.1149 -0.1121 0.1311 -0.1034 0.1465 -0.0936 0.161 -0.0827 0.1746 -0.0709 0.1875 -0.058 0.1994 -0.0441 0.2106 -0.0397 0.2166 -0.0344 0.222 -0.0284 0.2265 -0.0219 0.2302 -0.0148 0.2328 -0.0075 0.2345 0 0.235 0.0075 0.2345 0.0148 0.2328 0.0219 0.2302 0.0284 0.2265 0.0344 0.222 0.0397 0.2166 0.0441 0.2106 0.058 0.1994 0.0709 0.1875 0.0827 0.1746 0.0936 0.161 0.1034 0.1465 0.1121 0.1311 0.1199 0.1149 0.1266 0.0979 0.1324 0.08 0.1371 0.0613 0.1407 0.0417 0.1434 0.0213 0.145 0) (steps 3)))))
+      (translate (t 0.215 1.152 -0.012) (rotate-mat 0.850565 -0.281868 0.443948 0.257283 0.959329 0.116159 -0.458634 0.01542 0.888492 (round (r 0.018) (extrude (center 0 0 0.041) (depth 0.041) (spline -0.145 0 -0.1434 0.0213 -0.1407 0.0417 -0.1371 0.0613 -0.1324 0.08 -0.1266 0.0979 -0.1199 0.1149 -0.1121 0.1311 -0.1034 0.1465 -0.0936 0.161 -0.0827 0.1746 -0.0709 0.1875 -0.058 0.1994 -0.0441 0.2106 -0.0397 0.2166 -0.0344 0.222 -0.0284 0.2265 -0.0219 0.2302 -0.0148 0.2328 -0.0075 0.2345 0 0.235 0.0075 0.2345 0.0148 0.2328 0.0219 0.2302 0.0284 0.2265 0.0344 0.222 0.0397 0.2166 0.0441 0.2106 0.058 0.1994 0.0709 0.1875 0.0827 0.1746 0.0936 0.161 0.1034 0.1465 0.1121 0.1311 0.1199 0.1149 0.1266 0.0979 0.1324 0.08 0.1371 0.0613 0.1407 0.0417 0.1434 0.0213 0.145 0) (steps 3)))))
+      (translate (t 0 0.946 0.3005) (ellipsoid (center 0 0 0) (radii 0.075 0.046 0.0525)))
+      (sweep (spline -0.33 0.69 0.17 -0.432 0.8 0.162 -0.498 0.93 0.15 -0.512 1.032 0.142) (radius 0.122))
+      (translate (t -0.516 1.14 0.138) (rotate-mat 0.995004 -0.099833 0 0.099833 0.995004 0 0 0 1 (ellipsoid (center 0 0 0) (radii 0.1225 0.1075 0.1075))))
+      (sweep (spline 0.3 0.58 0.2 0.308 0.53 0.312 0.268 0.51 0.412 0.19 0.5 0.47) (radius 0.098))
+      (translate (t 0.142 0.5 0.486) (rotate-mat 0.920648 -0.186625 0.342898 0.198669 0.980067 0 -0.336063 0.068123 0.939373 (ellipsoid (center 0 0 0) (radii 0.1025 0.086 0.091))))
+      (translate (t -0.235 0.072 0.238) (rotate-mat 0.961055 0 0.276356 0 1 0 -0.276356 0 0.961055 (ellipsoid (center 0 0 0) (radii 0.115 0.0725 0.165))))
+      (translate (t 0.245 0.072 0.23) (rotate-mat 0.96639 0 -0.257081 0 1 0 0.257081 0 0.96639 (ellipsoid (center 0 0 0) (radii 0.1125 0.0725 0.1625)))))))
+
+  (object "ear-pink"
+    (surface (color 0.909804 0.513725 0.435294) (ka 0.2) (kd 0.86) (ks 0.245) (phong 48) (roi 1.0)
+      (shader plastic)
+      (param Ka 0.2) (param Kd 0.86) (param Ks 0.245) (param roughness 0.3))
+    (sdf (smooth-union (k 0.025)
+      (translate (t -0.213 1.163 0.026) (rotate-mat 0.850565 0.281868 -0.443948 -0.257283 0.959329 0.116159 0.458634 0.01542 0.888492 (round (r 0.009) (extrude (center 0 0 0.015) (depth 0.015) (spline -0.1015 0 -0.10038 0.016614 -0.09849 0.032526 -0.09597 0.047814 -0.09268 0.0624 -0.08862 0.076362 -0.08393 0.089622 -0.07847 0.102258 -0.07238 0.11427 -0.06552 0.12558 -0.05789 0.136188 -0.04963 0.14625 -0.0406 0.155532 -0.03087 0.164268 -0.02779 0.168948 -0.02408 0.17316 -0.01988 0.17667 -0.01533 0.179556 -0.01036 0.181584 -0.00525 0.18291 0 0.1833 0.00525 0.18291 0.01036 0.181584 0.01533 0.179556 0.01988 0.17667 0.02408 0.17316 0.02779 0.168948 0.03087 0.164268 0.0406 0.155532 0.04963 0.14625 0.05789 0.136188 0.06552 0.12558 0.07238 0.11427 0.07847 0.102258 0.08393 0.089622 0.08862 0.076362 0.09268 0.0624 0.09597 0.047814 0.09849 0.032526 0.10038 0.016614 0.1015 0) (steps 3)))))
+      (translate (t 0.213 1.163 0.026) (rotate-mat 0.850565 -0.281868 0.443948 0.257283 0.959329 0.116159 -0.458634 0.01542 0.888492 (round (r 0.009) (extrude (center 0 0 0.015) (depth 0.015) (spline -0.1015 0 -0.10038 0.016614 -0.09849 0.032526 -0.09597 0.047814 -0.09268 0.0624 -0.08862 0.076362 -0.08393 0.089622 -0.07847 0.102258 -0.07238 0.11427 -0.06552 0.12558 -0.05789 0.136188 -0.04963 0.14625 -0.0406 0.155532 -0.03087 0.164268 -0.02779 0.168948 -0.02408 0.17316 -0.01988 0.17667 -0.01533 0.179556 -0.01036 0.181584 -0.00525 0.18291 0 0.1833 0.00525 0.18291 0.01036 0.181584 0.01533 0.179556 0.01988 0.17667 0.02408 0.17316 0.02779 0.168948 0.03087 0.164268 0.0406 0.155532 0.04963 0.14625 0.05789 0.136188 0.06552 0.12558 0.07238 0.11427 0.07847 0.102258 0.08393 0.089622 0.08862 0.076362 0.09268 0.0624 0.09597 0.047814 0.09849 0.032526 0.10038 0.016614 0.1015 0) (steps 3))))))))
+
+  (object "calico-gold"
+    (surface (color 0.823529 0.643137 0.345098) (ka 0.2) (kd 0.86) (ks 0.231) (phong 43) (roi 1.0)
+      (shader plastic)
+      (param Ka 0.2) (param Kd 0.86) (param Ks 0.231) (param roughness 0.34))
+    (sdf (smooth-union (k 0.025)
+      (translate (t 0 1.255 0.2482) (rotate-mat 1 0 0 0 0.724836 -0.688921 0 0.688921 0.724836 (ellipsoid (center 0 0 0) (radii 0.1175 0.036 0.07))))
+      (translate (t -0.122 1.182 0.2878) (ellipsoid (center 0 0 0) (radii 0.031 0.021 0.019)))
+      (translate (t 0.122 1.182 0.2878) (ellipsoid (center 0 0 0) (radii 0.031 0.021 0.019)))
+      (translate (t 0.222 1.268 -0.042) (rotate-mat 0.955336 -0.29552 0 0.29552 0.955336 0 0 0 1 (ellipsoid (center 0 0 0) (radii 0.075 0.075 0.024))))
+      (translate (t -0.3728 0.315 0.1349) (rotate-mat 0.852525 0 0.522687 0 1 0 -0.522687 0 0.852525 (ellipsoid (center 0 0 0) (radii 0.1175 0.1175 0.075))))
+      (translate (t 0.3728 0.315 0.1349) (rotate-mat 0.852525 0 -0.522687 0 1 0 0.522687 0 0.852525 (ellipsoid (center 0 0 0) (radii 0.1175 0.1175 0.075))))
+      (sweep (spline 0.2972 0.075 -0.2261 0.2864 0.0957 -0.2384 0.2837 0.1164 -0.2538 0.2907 0.1371 -0.2696 0.3072 0.1579 -0.2825 0.3311 0.1786 -0.2897 0.3583 0.1993 -0.2891 0.384 0.22 -0.28) (radius 0.072)))))
+
+  (object "calico-dark"
+    (surface (color 0.227451 0.207843 0.188235) (ka 0.2) (kd 0.86) (ks 0.203) (phong 34) (roi 1.0)
+      (shader plastic)
+      (param Ka 0.2) (param Kd 0.86) (param Ks 0.203) (param roughness 0.42))
+    (sdf (smooth-union (k 0.025)
+      (translate (t -0.222 1.264 -0.042) (rotate-mat 0.955336 0.29552 0 -0.29552 0.955336 0 0 0 1 (ellipsoid (center 0 0 0) (radii 0.069 0.07 0.023))))
+      (translate (t -0.3921 0.315 0.1418) (rotate-mat 0.852525 0 0.522687 0 1 0 -0.522687 0 0.852525 (ellipsoid (center 0 0 0) (radii 0.0625 0.0625 0.055))))
+      (translate (t 0.3921 0.315 0.1418) (rotate-mat 0.852525 0 -0.522687 0 1 0 0.522687 0 0.852525 (ellipsoid (center 0 0 0) (radii 0.0625 0.0625 0.055))))
+      (translate (t 0.1292 0.47 -0.3338) (rotate-mat 0.932327 0 -0.361615 0 1 0 0.361615 0 0.932327 (ellipsoid (center 0 0 0) (radii 0.12 0.115 0.075))))
+      (translate (t 0.384 0.22 -0.28) (ellipsoid (center 0 0 0) (radii 0.08 0.08 0.08))))))
+
+  (object "eye-dark"
+    (surface (color 0.227451 0.137255 0.070588) (ka 0.2) (kd 0.86) (ks 0.105) (phong 12) (roi 1.0)
+      (shader plastic)
+      (param Ka 0.2) (param Kd 0.86) (param Ks 0.105) (param roughness 0.7))
+    (sdf (smooth-union (k 0.025)
+      (translate (t -0.145 1.046 0.3176) (rotate-mat 0.96639 0 -0.257081 0 1 0 0.257081 0 0.96639 (ellipsoid (center 0 0 0) (radii 0.119 0.134 0.055))))
+      (translate (t 0.145 1.046 0.3176) (rotate-mat 0.96639 0 0.257081 0 1 0 -0.257081 0 0.96639 (ellipsoid (center 0 0 0) (radii 0.119 0.134 0.055)))))))
+
+  (object "eye-white"
+    (surface (color 1 1 1) (ka 0.2) (kd 0.86) (ks 0.329) (phong 83) (roi 1.0)
+      (shader plastic)
+      (param Ka 0.2) (param Kd 0.86) (param Ks 0.329) (param roughness 0.06))
+    (sdf (smooth-union (k 0.025)
+      (translate (t -0.1 1.098 0.3654) (ellipsoid (center 0 0 0) (radii 0.039 0.04 0.017)))
+      (translate (t -0.197 0.988 0.3333) (ellipsoid (center 0 0 0) (radii 0.022 0.022 0.015)))
+      (translate (t 0.1 1.098 0.3654) (ellipsoid (center 0 0 0) (radii 0.039 0.04 0.017)))
+      (translate (t 0.197 0.988 0.3333) (ellipsoid (center 0 0 0) (radii 0.022 0.022 0.015))))))
+
+  (object "nose-pink"
+    (surface (color 0.878431 0.54902 0.52549) (ka 0.2) (kd 0.86) (ks 0.273) (phong 58) (roi 1.0)
+      (shader plastic)
+      (param Ka 0.2) (param Kd 0.86) (param Ks 0.273) (param roughness 0.22))
+    (sdf (smooth-union (k 0.025)
+      (translate (t 0 0.986 0.3659) (ellipsoid (center 0 0 0) (radii 0.045 0.033 0.026))))))
+
+  (object "mouth-dark"
+    (surface (color 0.478431 0.227451 0.203922) (ka 0.2) (kd 0.86) (ks 0.21) (phong 36) (roi 1.0)
+      (shader plastic)
+      (param Ka 0.2) (param Kd 0.86) (param Ks 0.21) (param roughness 0.4))
+    (sdf (smooth-union (k 0.025)
+      (translate (t 0 0.93 0.344) (ellipsoid (center 0 0 0) (radii 0.06 0.039 0.031)))
+      (translate (t 0 0.57 0.392) (box (center 0 0 0) (size 0.0105 0.033 0.013))))))
+
+  (object "tongue-pink"
+    (surface (color 0.894118 0.45098 0.435294) (ka 0.2) (kd 0.86) (ks 0.252) (phong 50) (roi 1.0)
+      (shader plastic)
+      (param Ka 0.2) (param Kd 0.86) (param Ks 0.252) (param roughness 0.28))
+    (sdf (smooth-union (k 0.025)
+      (translate (t 0 0.916 0.3553) (ellipsoid (center 0 0 0) (radii 0.035 0.02 0.019))))))
+
+  (object "blush-pink"
+    (surface (color 0.941176 0.65098 0.603922) (ka 0.2) (kd 0.86) (ks 0.21) (phong 36) (roi 1.0)
+      (shader plastic)
+      (param Ka 0.2) (param Kd 0.86) (param Ks 0.21) (param roughness 0.4))
+    (sdf (smooth-union (k 0.025)
+      (translate (t -0.272 0.962 0.2317) (rotate-mat 0.877583 0 -0.479426 0 1 0 0.479426 0 0.877583 (ellipsoid (center 0 0 0) (radii 0.0875 0.0525 0.035))))
+      (translate (t 0.272 0.962 0.2317) (rotate-mat 0.877583 0 0.479426 0 1 0 -0.479426 0 0.877583 (ellipsoid (center 0 0 0) (radii 0.0875 0.0525 0.035)))))))
+
+  (object "collar-red"
+    (surface (color 0.752941 0.14902 0.121569) (ka 0.2) (kd 0.86) (ks 0.203) (phong 34) (roi 1.0)
+      (shader plastic)
+      (param Ka 0.2) (param Kd 0.86) (param Ks 0.203) (param roughness 0.42))
+    (sdf (smooth-union (k 0.025)
+      (translate (t 0 0.688 0.01) (cylinder (center 0 0 0) (radius 0.28) (height 0.0575))))))
+
+  (object "collar-dark"
+    (surface (color 0.556863 0.101961 0.086275) (ka 0.2) (kd 0.86) (ks 0.182) (phong 28) (roi 1.0)
+      (shader plastic)
+      (param Ka 0.2) (param Kd 0.86) (param Ks 0.182) (param roughness 0.48))
+    (sdf (smooth-union (k 0.025)
+      (translate (t 0 0.688 0.01) (cylinder (center 0 0 0) (radius 0.289) (height 0.026))))))
+
+  (object "gold"
+    (surface (color 0.901961 0.756863 0.345098) (ka 0.2) (kd 0.824) (ks 0.31616) (phong 55) (roi 1.0)
+      (shader plastic)
+      (param Ka 0.2) (param Kd 0.824) (param Ks 0.31616) (param roughness 0.24))
+    (sdf (smooth-union (k 0.025)
+      (translate (t 0 0.588 0.318) (ellipsoid (center 0 0 0) (radii 0.079 0.079 0.079)))
+      (translate (t 0 0.688 -0.3) (rotate-mat 1 0 0 0 -0.000004 -1 0 1 -0.000004 (cylinder (center 0 0 0) (radius 0.0825) (height 0.02))))
+      (translate (t 0.04 0.33 0.456) (rotate-mat 0.993214 -0.059664 0.099833 0.038971 0.979492 0.197677 -0.10958 -0.192445 0.97517 (ellipsoid (center 0 0 0) (radii 0.141 0.206 0.029)))))))
+
+  (object "gold-dark"
+    (surface (color 0.745098 0.584314 0.188235) (ka 0.2) (kd 0.83) (ks 0.2673) (phong 43) (roi 1.0)
+      (shader plastic)
+      (param Ka 0.2) (param Kd 0.83) (param Ks 0.2673) (param roughness 0.34))
+    (sdf (smooth-union (k 0.025)
+      (translate (t 0 0.588 0.318) (rotate-mat 1 0 0 0 1 -0.000004 0 0.000004 1 (torus (center 0 0 0) (major 0.0738) (minor 0.004059))))
+      (translate (t 0.04 0.33 0.436) (rotate-mat 0.993214 -0.059664 0.099833 0.038971 0.979492 0.197677 -0.10958 -0.192445 0.97517 (ellipsoid (center 0 0 0) (radii 0.165 0.235 0.036)))))))
+
+  (object "toe-pink"
+    (surface (color 0.870588 0.54902 0.509804) (ka 0.2) (kd 0.86) (ks 0.231) (phong 43) (roi 1.0)
+      (shader plastic)
+      (param Ka 0.2) (param Kd 0.86) (param Ks 0.231) (param roughness 0.34))
+    (sdf (smooth-union (k 0.025)
+      (translate (t -0.5547 1.176 0.242) (ellipsoid (center 0 0 0) (radii 0.008 0.026 0.007)))
+      (translate (t -0.516 1.176 0.242) (ellipsoid (center 0 0 0) (radii 0.008 0.026 0.007)))
+      (translate (t -0.4773 1.176 0.242) (ellipsoid (center 0 0 0) (radii 0.008 0.026 0.007)))
+      (translate (t 0.1087 0.532 0.556) (ellipsoid (center 0 0 0) (radii 0.0068 0.0221 0.00595)))
+      (translate (t 0.142 0.532 0.556) (ellipsoid (center 0 0 0) (radii 0.0068 0.0221 0.00595)))
+      (translate (t 0.1753 0.532 0.556) (ellipsoid (center 0 0 0) (radii 0.0068 0.0221 0.00595)))
+      (translate (t -0.281 0.132 0.329) (ellipsoid (center 0 0 0) (radii 0.0072 0.0063 0.0225)))
+      (translate (t -0.235 0.132 0.337) (ellipsoid (center 0 0 0) (radii 0.0072 0.0063 0.0225)))
+      (translate (t -0.189 0.132 0.329) (ellipsoid (center 0 0 0) (radii 0.0072 0.0063 0.0225)))
+      (translate (t 0.2 0.132 0.3195) (ellipsoid (center 0 0 0) (radii 0.0072 0.0063 0.0225)))
+      (translate (t 0.245 0.132 0.3275) (ellipsoid (center 0 0 0) (radii 0.0072 0.0063 0.0225)))
+      (translate (t 0.29 0.132 0.3195) (ellipsoid (center 0 0 0) (radii 0.0072 0.0063 0.0225))))))
+
+  (object "floor"
+    (surface (color 0.30 0.31 0.33) (ka 0.26) (kd 0.82) (ks 0.03) (phong 12) (roi 1.0)
+      (shader matte) (param Ka 0.26) (param Kd 0.82))
+    (sdf (box (center -0.068223 -2.855746 0.082335) (size 11.398187 2.849547 11.398187))))
+)

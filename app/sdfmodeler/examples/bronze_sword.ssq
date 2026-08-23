@@ -1,0 +1,31 @@
+; bronze_sword.ssq — 中国式青銅剣 (jian)。sdfmodeler でモデリング/編集用。
+;   刀身 = 菱形断面 superquad (中脊=中央稜線が出る) / 格 = 箱 / 柄 = 円柱
+;   箍(ring) = トーラス2本 / 首(pommel) = 平たい円盤(円柱)
+;   縦向き: 切先 -y(下) → 格 → 柄 → 首 +y(上)。青銅緑青(patina)材質。
+(scene
+  (background 0.80 0.82 0.84)
+  (camera (from 2.60 -0.70 6.30) (at 0 -0.95 0) (up 0 1 0) (fov 40))
+  (light (pos 6 8 6) (intensity 1.25) (color 1.0 0.98 0.92) (radius 0.6))
+  (light (pos -6 2 -3) (intensity 0.35) (color 0.7 0.85 1.0))
+  (object "bronze_sword"
+    (surface (color 0.44 0.53 0.47) (ka 0.22) (kd 0.72) (ks 0.42) (phong 48) (roi 1.0))
+    (sdf
+      (smooth-union (k 0.02)
+        ; ── 刀身: 菱形断面(e=1)で中脊+両刃、切先へ長くテーパ ──
+        (mcolor (c 0.46 0.63 0.57)
+          (superquad (center 0 -1.50 0) (radii 0.235 1.80 0.07)
+                     (e1 1.22) (e2 1.0) (e3 1.0)))
+        ; ── 格 (鍔): 刀身より幅広の薄い箱 ──
+        (mcolor (c 0.31 0.43 0.38)
+          (box (center 0 0.30 0) (size 0.34 0.10 0.15)))
+        ; ── 柄 (握り): 円柱 ──
+        (mcolor (c 0.31 0.43 0.38)
+          (cylinder (center 0 0.72 0) (radius 0.10) (height 0.34)))
+        ; ── 箍 (2本の隆起環) ──
+        (mcolor (c 0.35 0.48 0.43)
+          (torus (center 0 0.58 0) (major 0.125) (minor 0.032)))
+        (mcolor (c 0.35 0.48 0.43)
+          (torus (center 0 0.88 0) (major 0.125) (minor 0.032)))
+        ; ── 首 (円盤状の柄頭) ──
+        (mcolor (c 0.31 0.43 0.38)
+          (cylinder (center 0 1.13 0) (radius 0.22) (height 0.05)))))))

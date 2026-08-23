@@ -1,0 +1,25 @@
+﻿{
+    "updated":  "2026-08-23",
+    "platforms":  {
+                      "windows-x64":  {
+                                          "sqm":  {
+                                                      "commit":  "e75baef",
+                                                      "subject":  "sdfmodeler: (mesh (file ..)) を一級ノードに — 表示/transform編集/ピック/取込/色分け",
+                                                      "bytes":  4986076
+                                                  },
+                                          "shader_core":  {
+                                                              "commit":  "fcbffeb",
+                                                              "subject":  "shader: furvol — 体積シェル毛皮 (:volume)。Blender ヘア風のフワフワ",
+                                                              "bytes":  664205
+                                                          },
+                                          "built_with":  "MSYS2 UCRT64 GCC 16.2.0 (static link)",
+                                          "runtime_deps":  "Windows 10/11 のシステム DLL のみ (UCRT)。MSYS2 不要 — 実測確認済み"
+                                      }
+                  },
+    "app":  {
+                "sdfmodeler":  {
+                                   "commit":  "e75baef",
+                                   "note":  "sqm/sdfmodeler の追跡ファイルの snapshot。原本は sqm 側"
+                               }
+            }
+}

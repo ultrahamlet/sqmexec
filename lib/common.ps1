@@ -54,16 +54,36 @@ function Find-Msys2 {
 
 # sqm 実行に必要な情報を1つのオブジェクトにまとめる。
 # 実在チェックはしない (doctor がやる) — パスの組み立てだけ担当。
+#
+# 実行ファイルの探索順:
+#   ① ソースからビルドした sqm/dist (開発機。常に最新なので優先)
+#   ② sqmexec 同梱の bin/windows-x64 (配布先。ソースを持たない環境)
+# ⚠ shader.core は sqm.exe と**同じ出所の組**で使う。混ぜると ABI が
+#   食い違って落ちうるので、①②のどちらかに揃える (混成にしない)。
 function Get-SqmEnv {
     $ws = Get-Workspace
     $msys = Find-Msys2
+    $bundle = Join-Path $PSScriptRoot '..\bin\windows-x64'
+
+    $builtExe  = Join-Path $ws 'sqm\dist\sqm.exe'
+    $builtCore = Join-Path $ws 'dr_sbcl\lib\shader.core'
+    $bundExe   = Join-Path $bundle 'sqm.exe'
+    $bundCore  = Join-Path $bundle 'shader.core'
+
+    if (Test-Path $builtExe) { $exe = $builtExe; $core = $builtCore; $src = 'built' }
+    else                     { $exe = $bundExe;  $core = $bundCore;  $src = 'bundled' }
+
     [PSCustomObject]@{
         Workspace   = $ws
         SqmRepo     = Join-Path $ws 'sqm'
         DrSbclRepo  = Join-Path $ws 'dr_sbcl'
         VclayRepo   = Join-Path $ws 'vclay'
-        SqmExe      = Join-Path $ws 'sqm\dist\sqm.exe'
-        ShaderCore  = Join-Path $ws 'dr_sbcl\lib\shader.core'
+        SqmExe      = $exe
+        ShaderCore  = $core
+        BinarySource= $src          # 'built' = ソースから / 'bundled' = 同梱
+        BundleDir   = $bundle
+        BuiltExe    = $builtExe
+        BuiltCore   = $builtCore
         Msys2       = $msys
         Ucrt64Bin   = if ($msys) { Join-Path $msys 'ucrt64\bin' } else { $null }
         MsysBash    = if ($msys) { Join-Path $msys 'usr\bin\bash.exe' } else { $null }

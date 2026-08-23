@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>sdfmodeler ユーザーマニュアル</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+:root { --acc: #c97a1e; --line: #ddd; --code-bg: #f5f4f0; }
+body {
+  font: 15px/1.8 "Hiragino Sans", "Noto Sans JP", system-ui, sans-serif;
+  color: #222; max-width: 860px; margin: 0 auto; padding: 24px 20px 80px;
+}
+h1 { font-size: 26px; border-bottom: 3px solid var(--acc); padding-bottom: 8px; }
+h2 { font-size: 20px; margin-top: 44px; border-bottom: 1px solid var(--line); padding-bottom: 4px; }
+h3 { font-size: 16px; margin-top: 28px; color: var(--acc); }
+code, pre { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 13px; }
+code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
+pre { background: var(--code-bg); padding: 12px 14px; border-radius: 8px; overflow-x: auto; line-height: 1.5; }
+pre code { background: none; padding: 0; }
+table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 13.5px; }
+th, td { border: 1px solid var(--line); padding: 5px 10px; text-align: left; vertical-align: top; }
+th { background: #faf8f4; }
+kbd {
+  border: 1px solid #bbb; border-bottom-width: 2px; border-radius: 4px;
+  padding: 0 6px; font-size: 12px; background: #fff;
+}
+.note { background: #fdf6e8; border-left: 4px solid var(--acc); padding: 10px 14px; border-radius: 0 6px 6px 0; margin: 14px 0; }
+.toc { background: #f8f8f8; border-radius: 8px; padding: 14px 24px; }
+.toc a { text-decoration: none; }
+.layout { font-family: ui-monospace, monospace; font-size: 12px; line-height: 1.35; }
+footer { margin-top: 60px; color: #888; font-size: 12px; border-top: 1px solid var(--line); padding-top: 10px; }
+</style>
+</head>
+<body>
+
+<h1>sdfmodeler ユーザーマニュアル</h1>
+<p>
+sdfmodeler は、<b>階層的な SDF (符号付き距離場) モデル</b>をブラウザ上でリアルタイムに
+モデリングするツールです。球・カプセル・楕円体などのプリミティブを
+smooth-union / smooth-subtract で滑らかに融合し、translate / rotate / mirror の
+入れ子で関節階層を組み立てる、MagicaCSG 系のワークフローを再現します。
+作ったモデルは <b>sqm レンダラーの <code>.ssq</code> シーン</b>としてそのまま書き出せます。
+</p>
+
+<div class="toc">
+<b>目次</b>
+<ol>
+<li><a href="#setup">動作環境と起動</a></li>
+<li><a href="#screen">画面構成</a></li>
+<li><a href="#viewport">ビューポート操作</a></li>
+<li><a href="#tree">シーンツリーとノード</a></li>
+<li><a href="#inspector">インスペクタでの編集</a></li>
+<li><a href="#tutorial">チュートリアル: 簡単な生き物を作る</a></li>
+<li><a href="#file">ファイルの読み書きと sqm でのレンダリング</a></li>
+<li><a href="#reference">ノードリファレンス</a></li>
+<li><a href="#limits">制限事項・トラブルシューティング</a></li>
+</ol>
+</div>
+
+<h2 id="setup">1. 動作環境と起動</h2>
+<p>必要なもの: WebGL2 対応ブラウザ (Chrome / Safari / Firefox / Edge の最新版) と、
+ローカル http サーバ (ES modules を使うため <code>file://</code> では動きません)。</p>
+
+<h3>起動方法</h3>
+<pre><code># macOS
+serve.command をダブルクリック   # 初回に警告が出たら右クリック→「開く」
+./serve.sh                        # ターミナルから (または: python3 -m http.server 8642)
+
+# Windows
+serve.bat をダブルクリック        # (または: py -m http.server 8642)
+
+# Linux
+./serve.sh
+</code></pre>
+<p>ブラウザで <code>http://localhost:8642</code> を開くと起動します。
+Python 以外でも、任意の静的サーバ (<code>npx serve</code> など) で構いません。</p>
+
+<h2 id="screen">2. 画面構成</h2>
+<pre class="layout">
+┌─────────────────────── ツールバー ───────────────────────┐
+│ 新規 / サンプル: frog / 開く / 書き出し.ssq / 保存.json /   │
+│ 元に戻す / やり直し                                        │
+├──────────┬──────────────────────────────┬──────────────┤
+│ シーン    │      [品質▾ 影 床 軸 色分け] ←表示オプション │ インスペクタ  │
+│ ツリー    │   3D ビューポート (右上に常時表示)  │ (選択対象の   │
+│ (階層)    │   (リアルタイムプレビュー)     │  パラメータ)  │
+├──────────┴──────────────────────────────┴──────────────┤
+│ ステータスバー (ノード数 / コンパイル時間 / メッセージ)      │
+└─────────────────────────────────────────────────────────┘
+</pre>
+<table>
+<tr><th>ツールバー項目</th><th>説明</th></tr>
+<tr><td>新規</td><td>空のシーンから開始 (現在の内容は破棄)。ルートには空の
+「滑らか和」ノードだけが置かれ、ビューポート中央の<b>クイック追加</b>
+(全プリミティブ) から最初のパーツを置きます</td></tr>
+<tr><td>サンプル: frog</td><td>付属の <code>examples/frog.ssq</code> (関節階層のカエル) を読み込み</td></tr>
+<tr><td>開く</td><td><code>.ssq</code> (sqm シーン) / <code>.json</code> (エディタ保存形式) を読み込み</td></tr>
+<tr><td>書き出し .ssq</td><td>sqm でレンダリングできるシーンをダウンロード</td></tr>
+<tr><td>保存 .json</td><td>ノード名なども含むエディタ専用形式で保存</td></tr>
+<tr><td colspan="2"><b>▼ 以下の表示オプションはビューポート右上のフローティングパネルにあります</b></td></tr>
+<tr><td>品質</td><td>プレビュー解像度 (高品質 / 標準 / 高速)。重いモデルは「高速」に</td></tr>
+<tr><td>影 / 床 / 軸</td><td>ソフトシャドウ / チェッカー床グリッド /
+原点の三次元クロスライン (X=赤, Y=緑, Z=青。負側は減光) の表示切替</td></tr>
+<tr><td>色分け</td><td><b>パーツ識別表示</b> — 各プリミティブ (子・兄弟のパーツ) を
+それぞれ固有の識別色で表示し、シーンツリーの ● アイコンも同じ色になります。
+smooth-union で融合した箇所は各パーツの識別色が距離比のグラデーションで混ざり、
+ブレンドの効き具合が視覚的に分かります。
+「どのパーツがツリーのどのノードか」を確認しながら編集するときに便利です。
+識別色は<b>自動割当専用の非破壊デバッグ表示</b>で、モデルデータには含まれません。
+パーツに実際の色を付けたいときは下の<b>「色」(材質色)</b> を使ってください</td></tr>
+<tr><td>色 (インスペクタ)</td><td><b>材質色</b> — 任意ノードに実レンダリング色を設定。
+未設定のノードは親から継承 (既定はオブジェクトの surface 色)。smooth-union の融合面では
+色が距離比で滑らかになじみます。<b>オブジェクト統合ドロップでは元オブジェクトの色が
+自動付与</b>されるので、統合しても色分けが失われません。「継承に戻す」で解除。
+<b>.ssq へは <code>(mcolor (c r g b) &lt;sub&gt;)</code> ラップとして書き出され、
+sqm 本レンダでもプレビューと同じく融合したまま色が混ざります</b>
+(sqm 2026-07-10 以降。それ以前の sqm は mcolor を無視して単色になります)。
+.json 保存も無損失です。色ピッカー横の <b>💉 スポイト</b>で選択パーツの色
+(継承解決後の見えている色) をコピーし、別パーツを選んで<b>ペースト</b>
+(ボタンにコピー色のスウォッチ表示) で適用できます。コピー色はリロード後も保持されます</td></tr>
+<tr><td>深度</td><td><b>深度マップ表示</b> — 視点距離の白黒可視化 (近=白, 遠=黒。
+sqm の depth シェーダー相当のリニア出力)。正規化レンジはカメラ距離から自動
+(近 0.25d 〜 遠 2.2d)。ズームでレンジも追従します</td></tr>
+<tr><td>📷 PNG</td><td><b>ビューポートを PNG 保存</b> — 現在の表示 (通常 / 色分け / 深度
+モードそのまま) を現在のプレビュー解像度でダウンロード。深度モード中は
+ファイル名に <code>_depth</code> が付きます。解像度を上げたいときは品質を
+「高品質」にしてから保存</td></tr>
+</table>
+<p>左のツリーと右のインスペクタの幅は、ビューポートとの<b>境界線をドラッグ</b>して
+変更できます (ダブルクリックで既定幅に戻る。幅は記憶されます)。</p>
+<p>作業内容はブラウザの localStorage に自動保存され、次回起動時に復元されます。</p>
+
+<h2 id="viewport">3. ビューポート操作</h2>
+<table>
+<tr><th>操作</th><th>動作</th></tr>
+<tr><td>ドラッグ</td><td>注視点まわりの回転 (オービット)</td></tr>
+<tr><td><kbd>Shift</kbd>+ドラッグ / 右ドラッグ</td><td>パン (平行移動)</td></tr>
+<tr><td>ホイール</td><td>ズーム</td></tr>
+<tr><td><b>クリック</b></td><td><b>パーツ選択</b> — クリックした表面を構成するプリミティブを
+ツリー上で選択。mirror で複製された側をクリックしても元ノードが選ばれます</td></tr>
+<tr><td>矢印キー</td><td><b>選択パーツの移動</b> — ←→は画面の左右 (カメラの向きに応じて
+X/Z 軸へ自動スナップ)、↑↓は上下 (Y軸)、<kbd>Alt</kbd>+↑↓は奥行き。
+1回 0.1、<kbd>Shift</kbd> で 0.01 の微調整。グループ (演算/変換ノード) を選んで動かすと
+自動的に「移動」ノードでラップされます。連続入力は1回の undo でまとめて戻せます</td></tr>
+</table>
+<p>選択中のノード (とその配下) はオレンジ色にハイライトされます。
+書き出し時のカメラは現在のビューがそのまま <code>(camera ...)</code> になります。</p>
+
+<h3>ギズモ (選択パーツの直接操作)</h3>
+<p>パーツを選択するとビューポートにギズモが出ます。ツールバーのプルダウン、
+またはキー <kbd>W</kbd>=移動 / <kbd>E</kbd>=回転 / <kbd>R</kbd>=スケール でモードを切り替えます
+(いずれも <kbd>Shift</kbd> でスナップ)。</p>
+<table>
+<tr><th>モード</th><th>操作</th></tr>
+<tr><td><b>移動</b> (<kbd>W</kbd>)</td><td>XYZ 矢印=軸移動、色付き四角=平面移動、中央円=ビュー平面移動。
+<kbd>Shift</kbd>=0.1 グリッドスナップ。グループを動かすと自動で「移動」ラップされます</td></tr>
+<tr><td><b>回転</b> (<kbd>E</kbd>)</td><td>3色リング=ワールド軸まわりの回転 (<kbd>Shift</kbd>=15°スナップ)。
+リング中心の<b>白ドット</b>をドラッグすると pivot (回転中心=関節の曲がる位置) を移動。
+rotate ノードが無いパーツでは deg=0 の回転が自動でラップされ、見た目を変えずに関節を仕込めます</td></tr>
+<tr><td><b>スケール</b> (<kbd>R</kbd>)</td><td>軸ハンドル (四角チップ)=その方向の寸法、中央四角=一様拡縮
+(<kbd>Shift</kbd>=×0.1 刻み)。対象はプリミティブ限定 — グループ選択時はサブツリー最初の
+スケール可能なプリミティブに委譲されます</td></tr>
+</table>
+<p><b>掃引チューブ (sweep) の制御点</b>: 移動モードで掃引チューブを選択すると、経路の各制御点に
+<b>緑ドット</b>が表示されます。ドットをドラッグするとその点だけをビュー平面内で動かせます
+(<kbd>Shift</kbd>=0.1 スナップ)。奥行き方向に動かしたいときは視点を回してからドラッグしてください。
+中央のギズモ本体はチューブ<b>全体</b>の平行移動です。スケールモードでは経路点が重心まわりに
+拡縮されます (一様=半径も連動、軸=その成分のみ=形を潰す/伸ばす)。</p>
+
+<h2 id="tree">4. シーンツリーとノード</h2>
+<p>シーンは複数の<b>オブジェクト</b> (surface = 材質 + SDF ツリー) からなり、
+各オブジェクトの SDF ツリーは 3 種類のノードでできています:</p>
+<table>
+<tr><th>種類 (ツリーの色)</th><th>役割</th><th>例</th></tr>
+<tr><td>● プリミティブ (緑)</td><td>形の素。距離場の葉ノード</td><td>球, 楕円体, カプセル, 箱 …</td></tr>
+<tr><td>⊕ CSG 演算 (青)</td><td>子ノードたちを合成。子はいくつでも持てる</td><td>和, 滑らか和(k), 差, 滑らか差(k), 積, 反転</td></tr>
+<tr><td>↳ 変換 (黄)</td><td>子ツリー全体を剛体変換。子は1つ</td><td>移動, 回転, ミラー</td></tr>
+</table>
+<p>
+<b>関節階層の考え方</b>: 「回転 → 移動 → 滑らか和 { カプセル, (次の関節…) }」を
+入れ子にすると、腕や脚のようなリグになります。親の回転を変えるだけで
+先端まで一緒に動きます。サンプルの frog の脚がこの構造です。
+</p>
+<p>オブジェクト行の 👁 で表示/非表示、色スウォッチは surface の
+<code>(color ...)</code> を反映します。「＋ オブジェクト追加」で複数オブジェクトを併置できます
+(例: 水面 + キャラクター)。</p>
+
+<h2 id="inspector">5. インスペクタでの編集</h2>
+<h3>数値の編集</h3>
+<p>数値フィールドは直接入力のほか、右端の <b>「↔」グリップを左右にドラッグ</b>すると
+スライダのように連続的に変えられます (<kbd>Shift</kbd> を押しながらで微調整)。
+ドラッグ中もプレビューはリアルタイムに追従します (シェーダ再コンパイル不要)。</p>
+
+<h3>掃引チューブ (sweep) の点リスト編集</h3>
+<p>掃引チューブを選択すると、インスペクタに経路の制御点が「点N xyz r」の行で並びます
+(r = その点での半径。点ごとに変えるとテーパー=先細りになります)。</p>
+<table>
+<tr><th>UI</th><th>動作</th></tr>
+<tr><td>x y z r の数値</td><td>直接入力、または「↔」グリップの左右ドラッグ (再コンパイル不要で軽い)</td></tr>
+<tr><td><b>◇</b></td><td>その点と<b>次の点との中間</b>に新しい点を挿入 (半径も平均)。
+粗く経路を引いてから細部を詰めるときに使います。ループ時は末尾→先頭の間にも挿入可</td></tr>
+<tr><td><b>✕</b></td><td>その点を削除 (2点までは減らせません)</td></tr>
+<tr><td>＋ 点を追加</td><td>終端の延長線上に外挿で追加</td></tr>
+<tr><td>種類</td><td>折れ線 / スプライン (Catmull-Rom=制御点を通る) / Bスプライン (近似=より締まる)</td></tr>
+<tr><td>分割</td><td>スプライン1スパンの分割数 (既定12)。上げると滑らか・レンダリングは重くなります</td></tr>
+<tr><td>ループ</td><td>端を結ぶ閉ループ (リング・結び目)</td></tr>
+</table>
+<div class="note"><b>おすすめの流れ</b>: カプセルを置く → 「⇄ タイプ変更 → 掃引チューブ」(2点の直線チューブになる)
+→ ◇ で中間点を足す → ビューポートの緑ドットで形を彫る → r で先細り →
+スケールギズモで全体サイズ調整。ロープ/パイプ/蔓/取っ手/角 (つの) がこれ1本で作れます。</div>
+
+<h3>構造の編集</h3>
+<table>
+<tr><th>ボタン</th><th>動作</th></tr>
+<tr><td>⇄ タイプ変更</td><td>選択ノードを別タイプに置き換え (球→カプセル、和→滑らか和 など)。
+位置・サイズ・子ノードはできるだけ引き継がれます。プリミティブはプリミティブ同士で、
+ラップ系 (CSG演算・変換) は<b>種類をまたいで</b>入れ替え可能
+(移動→滑らか和、滑らか差→ミラー など。演算→変換は子が1つ以下のとき)。
+<br>※ 引き継ぎ先のないパラメータは失われます — 例えば「移動→滑らか和」では
+移動量 t が消え、サブツリーは元の位置に戻ります。意図と違った場合は
+<kbd>Ctrl/⌘</kbd>+<kbd>Z</kbd> で入れ替え前に戻せます</td></tr>
+<tr><td>＋ 子を追加</td><td>CSG 演算ノードに新しいプリミティブ/演算を追加</td></tr>
+<tr><td>＋ 兄弟を追加</td><td>選択ノードの隣に追加。ルートで使うと自動的に「和」でまとめられます</td></tr>
+<tr><td>◇ ラップ</td><td>選択ノードを 移動/回転/ミラー/滑らか和 などで包む。
+<b>モデリングの基本操作</b> — 例: 球を選んで「滑らか和」でラップ → その中に子を追加、
+パーツを選んで「回転」でラップ → 角度をドラッグ</td></tr>
+<tr><td>アンラップ</td><td>子が1つのノードを外して子を昇格</td></tr>
+<tr><td>複製</td><td>選択ノードを配下ごとコピー</td></tr>
+<tr><td>▲ ▼</td><td>兄弟間の並べ替え (差演算では順序に意味があります)</td></tr>
+<tr><td>削除 / <kbd>Delete</kbd></td><td>選択ノードを配下ごと削除</td></tr>
+</table>
+<p><kbd>Ctrl/⌘</kbd>+<kbd>Z</kbd> で元に戻す、<kbd>Ctrl/⌘</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> でやり直し。</p>
+
+<h3>オブジェクト / シーン設定</h3>
+<p>ツリーでオブジェクト名の行を選ぶと、名前・プレビュー色・surface (材質) の
+raw テキスト・背景色・ライトを編集できます。surface とライトは sqm の記法のまま
+保持されるので、<code>(shader ...)</code> や <code>(param ...)</code> を含む高度な材質も
+壊さずに読み書きできます。<b>「オブジェクト複製」</b>で SDF ツリーと材質ごと
+まるごと複製できます (複製直後は元と同じ位置に重なっているので、ルートノードを
+選択して矢印キーで動かすと分離できます)。「オブジェクト削除」で削除。</p>
+
+<h2 id="tutorial">6. チュートリアル: 簡単な生き物を作る</h2>
+<ol>
+<li><b>新規</b>を押す。空のシーン (ルート=滑らか和 k=0.15) から始まり、
+原点に軸クロス (X=赤, Y=緑, Z=青) が表示されます。</li>
+<li>ビューポート中央の<b>クイック追加</b>から<b>球</b>を選ぶ → 胴体になります。
+以後パーツを足すたび、ルートの滑らか和で自動的にぬるっと融合します
+(融合の強さはルートノードの k をドラッグ)。</li>
+<li>ルートの滑らか和ノードを選択 →「＋ 子を追加」→ <b>楕円体</b>。center を (0, 1.2, 0.3)、
+radii を (0.5, 0.45, 0.5) 程度にドラッグ調整 → 頭ができます。</li>
+<li>頭の楕円体を選択 →「＋ 兄弟を追加」→ <b>カプセル</b>。
+a=(0.5, 0.6, 0), b=(0.9, 0, 0), radius=0.15 → 右腕。</li>
+<li>腕のカプセルを「◇ ラップ」→ <b>ミラー</b>。normal は既定の (-1,0,0) のまま
+→ 左腕が対称に生えます。以後、右側を編集すれば両側に反映。</li>
+<li>腕を曲げたい時: カプセルを「◇ ラップ」→ <b>回転</b>。pivot が付け根に自動設定されるので
+deg をドラッグ → 関節になります。</li>
+<li>目のくぼみ: 頭の楕円体を「◇ ラップ」→ <b>滑らか差</b> → 子に小さい球を追加して
+頭に少しめり込む位置へ。差の2番目以降の子が「削る側」です。</li>
+<li>ビューを好きな角度にして<b>書き出し .ssq</b> → sqm でレンダリング (次章)。</li>
+</ol>
+<div class="note">
+構造がわからなくなったら「サンプル: frog」を読み込み、ビューポートで各パーツを
+クリックしてツリーがどう組まれているか観察するのが早道です。
+</div>
+
+<h2 id="file">7. ファイルの読み書きと sqm でのレンダリング</h2>
+<h3>.ssq 書き出し</h3>
+<p>「書き出し .ssq」で保存したファイルは、そのまま sqm でレンダリングできます:</p>
+<pre><code>./sqm -i model.ssq -o out.png -x 800 -y 600 -A 2 -s 2 -O 8 -T aces</code></pre>
+<p>カメラは書き出し時のビュー、背景・ライト・surface はエディタの設定が反映されます。
+プレビューの見た目は簡易シェーディングですが、<b>ジオメトリ (距離場) は sqm と同一の式</b>で
+評価しているため、形は本レンダと一致します。</p>
+
+<h3>ワンクリックテストレンダ (🎬 sqm ボタン)</h3>
+<p>ビューポート上部の <b>🎬 sqm</b> ボタンで、モデリング中のシーンを<b>現在のカメラのまま
+sqm で本レンダリング</b>し、結果の PNG をその場に表示します (PNG保存も可)。
+プレビューは単色近似なので、シェーダ・影・材質の実際の見た目を確認したいときに使います。</p>
+<ul>
+<li>クリック = <b>ドラフト</b> (640px, AA1・ハード影, 数秒)</li>
+<li><kbd>Shift</kbd>+クリック = <b>高品質</b> (1000px, AA2・ソフト影・擬似GI, 数十秒〜)</li>
+</ul>
+<div class="note">serve.py 経由で開いていて、配信フォルダの隣に <code>../dist/sqm</code> がある環境
+(= sqm リポジトリ内) でのみ動きます。別の場所で使う場合は環境変数 <code>SQM_BIN</code> に
+sqm バイナリのパスを設定して serve.py を起動してください。zip 配布版を単体で開いた場合は
+エラーメッセージが出ます (モデリング機能には影響ありません)。</div>
+
+<h3>レンダリング設定タブ (⚙ レンダ設定)</h3>
+<p>ツールバーの <b>⚙ レンダ設定</b> で、別タブにレンダリングのパラメータ設定パネルが開きます。
+解像度・アンチエイリアス・影・擬似GI・再帰深度・トーンマッピング・フレネル・被写界深度・
+ブルーム・レンズ (色収差/周辺減光)・深度フォグなどを細かく設定し、<b>「▶ レンダリング開始」</b>
+で sdfmodeler の現在シーンを本レンダリングして結果を表示します (PNG 保存可)。</p>
+<ul>
+<li><b>プリセット</b>: ドラフト / 標準 / 高品質 のワンクリック</li>
+<li><b>設定の保存</b>: 変更は自動でブラウザに保存され、<b>リロードしても復元</b>されます。
+  「JSON 書き出し / 読み込み」で設定ファイルとして持ち出し・共有も可能</li>
+<li>シーンは BroadcastChannel で sdfmodeler タブから取り寄せます (同じポートで開いておく)。
+  別ポート/未起動のときは「.ssq を読み込み」で直接指定できます</li>
+</ul>
+<div class="note">🎬 sqm ボタンが「今の構図でサッと確認」なのに対し、⚙ レンダ設定タブは
+「品質・演出を作り込んで仕上げる」用途です。どちらも同じ <code>../dist/sqm</code> を使います。</div>
+
+<h3>.ssq 読み込み</h3>
+<ul>
+<li>既存の sqm シーンを開くと、各 object の SDF ツリーが編集可能な形で展開されます。</li>
+<li><code>(rotate-mat ...)</code> (MagicaCSG 等からの移植で使われる生の回転行列) は、
+直交行列であれば自動的に編集しやすい <code>(rotate (deg ...))</code> に復元されます。</li>
+<li>エディタが対応しないプリミティブ (superquad, lathe など) は <b>raw ノード</b>として
+テキストのまま保持されます。プレビューには出ませんが、書き出しで元通り出力されるため
+ラウンドトリップでシーンが壊れることはありません。</li>
+<li>入れ子の smooth-union チェーンは n-ary に平坦化して表示しますが、書き出し時に
+元と同じ入れ子方向 (右fold / 差系は左fold) に戻すため、距離場は完全に一致します。</li>
+</ul>
+
+<h3>.json 保存</h3>
+<p>ノードにつけた名前や表示状態など、<code>.ssq</code> に載らない情報も保存する
+エディタ専用形式です。制作途中のプロジェクト保存にはこちらを使ってください。</p>
+
+<h2 id="reference">8. ノードリファレンス</h2>
+<h3>プリミティブ</h3>
+<table>
+<tr><th>ノード</th><th>.ssq 名</th><th>パラメータ</th></tr>
+<tr><td>球</td><td>sphere</td><td>center, radius</td></tr>
+<tr><td>箱</td><td>box</td><td>center, size (各軸の半径)</td></tr>
+<tr><td>楕円体</td><td>ellipsoid</td><td>center, radii (x y z 半径)</td></tr>
+<tr><td>トーラス</td><td>torus</td><td>center, major (大半径), minor (管半径)。軸は y</td></tr>
+<tr><td>水平面</td><td>plane</td><td>center (y のみ有効)。y より下が中身の半空間 — 地面/水面用</td></tr>
+<tr><td>箱フレーム</td><td>box-frame</td><td>center, size, thick (桟の太さ)</td></tr>
+<tr><td>カプセル</td><td>capsule</td><td>a, b (両端点), radius — 手足の定番</td></tr>
+<tr><td>円柱</td><td>cylinder</td><td>center, radius, height (半高)。軸は y</td></tr>
+<tr><td>円柱AB</td><td>cylinder-ab</td><td>a, b, radius — 任意方向の円柱</td></tr>
+<tr><td>丸錐</td><td>round-cone</td><td>center, r1 (下半径), r2 (上半径), height</td></tr>
+<tr><td>丸錐AB</td><td>round-cone-ab</td><td>a, b, r1, r2 — 先細りの手足に便利</td></tr>
+<tr><td>切頂円錐</td><td>capped-cone</td><td>center, height, r1, r2</td></tr>
+<tr><td>切頂円錐AB</td><td>capped-cone-ab</td><td>a, b, r1, r2</td></tr>
+<tr><td>円錐</td><td>cone</td><td>center, angle (度), height。先端が center で下向きに開く</td></tr>
+<tr><td>八面体</td><td>octahedron</td><td>center, size</td></tr>
+<tr><td>超楕円体</td><td>superquad</td><td>center, radii, e1 (縦), e2/e3 (横)。e=2 で球、大きくすると箱、
+1 で八面体、&lt;1 で星形ピンチ — 角ばりを連続に振れます</td></tr>
+<tr><td>掃引チューブ</td><td>sweep</td><td>points (3D経路点列), radii (点毎半径=テーパー),
+種類 (折れ線/スプライン/Bスプライン), 分割, ループ。経路に沿って円形断面を掃く —
+ロープ/パイプ/蔓/取っ手用。操作は <a href="#viewport">3章のギズモ</a>と
+<a href="#inspector">5章の点リスト編集</a>を参照</td></tr>
+</table>
+
+<h3>CSG 演算 (子をいくつでも持てます)</h3>
+<table>
+<tr><th>ノード</th><th>.ssq 名</th><th>効果</th></tr>
+<tr><td>和</td><td>union</td><td>min — 単純合体</td></tr>
+<tr><td>滑らか和</td><td>smooth-union</td><td>k のブレンド半径で滑らかに融合。<b>有機的モデリングの主役</b>。
+frog は k=0.12 で関節を、k=0.05 で目のくぼみ周りを繋いでいます</td></tr>
+<tr><td>差</td><td>subtract</td><td>最初の子から残りの子を削る (順序が重要)</td></tr>
+<tr><td>滑らか差</td><td>smooth-subtract</td><td>削り跡が k で丸くなる。口・くぼみ用</td></tr>
+<tr><td>積</td><td>intersect</td><td>max — 共通部分</td></tr>
+<tr><td>ブレンド</td><td>blend</td><td>2つの形の距離場を u (0〜1) で線形補間 — モーフ</td></tr>
+<tr><td>反転</td><td>invert</td><td>内外反転</td></tr>
+</table>
+
+<h3>変換 (子は1つ)</h3>
+<table>
+<tr><th>ノード</th><th>.ssq 名</th><th>パラメータ</th></tr>
+<tr><td>移動</td><td>translate</td><td>t (x y z)</td></tr>
+<tr><td>回転</td><td>rotate</td><td>deg (オイラー角。R = Rx·Ry·Rz), pivot (回転中心)。
+ラップ時に子の中心が pivot に自動設定されます</td></tr>
+<tr><td>回転行列</td><td>rotate-mat</td><td>m0〜m8 (3×3), pivot。インポート専用に近い —
+通常は自動で「回転」に変換されます</td></tr>
+<tr><td>ミラー</td><td>mirror</td><td>normal, d。平面 dot(n,p)=d の<b>法線と逆側</b>にある子の形を
+正側へ複製します。既定 (-1,0,0) は「+x 側で作って −x 側に対称コピー」</td></tr>
+<tr><td>スケール</td><td>scale</td><td>s (x y z)。サブツリー丸ごと拡縮 (位置・間隔も比例)。
+モデル取込のサイズ合わせに。非一様は距離が保守近似になります</td></tr>
+<tr><td>反復</td><td>repeat</td><td>count, offset。子を offset 方向に count 個複製 — 柵/階段/タイル</td></tr>
+<tr><td>反復3D</td><td>repeat3</td><td>count (nx ny nz), spacing。軸整列の3Dグリッド反復</td></tr>
+<tr><td>角丸め</td><td>round</td><td>r。全体を r だけ膨らませ角を丸める</td></tr>
+<tr><td>殻化</td><td>onion</td><td>t。厚み t の殻にする — 差で切ると器/ボウル</td></tr>
+<tr><td>引き伸ばし</td><td>elongate</td><td>h (x y z)。各軸 ±h に引き伸ばす (球→カプセル等)</td></tr>
+<tr><td>ねじり</td><td>twist</td><td>rate (°/単位長)。y 軸まわりのねじり</td></tr>
+<tr><td>曲げ</td><td>bend</td><td>rate (°/単位長)。x 軸に沿った曲げ。twist/bend は歪みが強いほど描画が重くなります</td></tr>
+</table>
+
+<h2 id="limits">9. 制限事項・トラブルシューティング</h2>
+<ul>
+<li><b>手続きシェーダは単色プレビュー</b>: ripples (波紋) や frog (斑点) などの
+sqm シェーダは、プレビューでは surface の <code>(color)</code> による単色近似です。
+書き出しには完全な形で保持されます。</li>
+<li><b>ノード名は .json のみ</b>: <code>.ssq</code> フォーマットにノード名は存在しないため、
+名前を残したい場合は .json でも保存してください。</li>
+<li><b>raw ノード</b>: 未対応プリミティブはプレビューに表示されません (書き出しは正常)。</li>
+<li><b>動作が重い</b>: 品質を「高速」に、「影」をオフに。ノード数の多いモデルでは
+smooth-union の子を増やすほどレイマーチが重くなります。</li>
+<li><b>画面が真っ黒 / エラー表示</b>: ステータスバーにシェーダエラーが出ます。
+undo で直前の状態に戻ってください。</li>
+<li><b>「サンプル読込失敗」</b>: <code>file://</code> で開いています。http サーバ経由で
+開き直してください (<a href="#setup">1章</a>)。</li>
+<li><b>初期化したい</b>: ブラウザの localStorage を消すか「新規」を押します。</li>
+<li><b>プレビューとレンダ結果が違う</b>: 3D プレビュー (WebGL) と 🎬/⚙ のレンダ (sqm 本体) は
+別々の仕組みで描いています。ズレるときは大抵<b>片方が古い</b>状態です。①モデラーのタブを
+<b>ハードリロード</b> (⌘⇧R)、②レンダに使う <code>sqm</code> バイナリが最新か確認 (エンジンを
+更新したら <code>dist</code> で <code>make</code> し直す。<code>SQM_BIN</code> で指すか、配信フォルダの
+隣に最新の <code>dist/sqm</code> を置く)。同梱の起動スクリプトは既定でリポジトリの最新 sqm を使う設定です。</li>
+<li><b>「レンダ設定」タブや「断面を編集」が反応しない</b>: 別タブ連携は<b>同じポート (同じ URL)</b>
+で開いたときだけ動きます。sdfmodeler と別タブが違うポートだと通信が届きません (適用時に警告が出ます)。</li>
+</ul>
+
+<footer>
+sdfmodeler — 階層SDFモデラー (sqm .ssq 対応)。検証:
+frog.ssq を import → export → sqm 本体でレンダリングし、オリジナルとピクセル一致を確認済み。
+</footer>
+</body>
+</html>

@@ -1,0 +1,29 @@
+; arm.ssq — SDF Editor 由来の3関節カプセルチェーン (関節階層のデモ)
+;   各関節 = translate(親の先端へ) → rotate(関節角, pivot=関節原点) → カプセル+次関節。
+;   GLSL: p_child = Rot(p_parent + TrInv) の 1:1 対応。角度は rotate の deg z を編集。
+(scene
+  (background 0.25 0.72 0.75)
+  (camera (from 4.2 2.6 -5.2) (at 0 1.9 0) (up 0 1 0) (fov 42))
+  (light (pos 6 8 -6) (intensity 1.35) (color 1.0 0.95 0.85) (radius 0.6))
+  (light (pos -6 3 -3) (intensity 0.35) (color 0.7 0.8 1.0))
+  (light (pos 0 8 5) (intensity 0.3) (color 1 1 1))
+  (object "ground"
+    (surface (color 0.75 0.68 0.55) (ka 0.3) (kd 0.8) (ks 0.08) (phong 8) (roi 1.0))
+    (sdf (plane (center 0 0 0))))
+  (object "arm"
+    (surface (color 0.7 0.7 0.72) (ka 0.24) (kd 0.8) (ks 0.35) (phong 32) (roi 1.0))
+    (sdf (translate (t 0 0.2 0)
+      (rotate (deg 0 0 20 0 0 0)
+        (union
+          (mcolor (c 0.85 0.30 0.28)
+            (capsule (a 0 0 0) (b 0 1 0) (radius 0.2)))
+          (translate (t 0 1.5 0)
+            (rotate (deg 0 0 25 0 0 0)
+              (union
+                (mcolor (c 0.95 0.72 0.25)
+                  (capsule (a 0 0 0) (b 0 1 0) (radius 0.2)))
+                (translate (t 0 1.5 0)
+                  (rotate (deg 0 0 35 0 0 0)
+                    (mcolor (c 0.30 0.55 0.90)
+                      (capsule (a 0 0 0) (b 0 1 0) (radius 0.2)))))))))))))
+)

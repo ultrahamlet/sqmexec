@@ -8,3 +8,11 @@
 
 # PowerShell は CRLF が自然。BOM 付き UTF-8 で保存すること (CLAUDE.md 参照)
 *.ps1   text eol=crlf
+
+# ⚠ 配布バイナリは絶対に text 変換しない (CRLF 混入で壊れる)
+*.exe   binary
+*.core  binary
+*.wasm  binary
+*.png   binary
+*.obj   binary
+*.f32   binary

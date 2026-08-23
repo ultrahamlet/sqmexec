@@ -1,0 +1,70 @@
+(scene
+  (background 0.09 0.095 0.115)
+  (camera (from -0.0809982 0.671453 -2.13728) (at 0.011114 0.517617 0.00900449) (up 0 1 0) (fov 32))
+  (light (pos -1.8 2.4 -2.1) (intensity 1.30) (color 1.00 0.96 0.90) (radius 0.5))
+  (light (pos 2.2 1.2 -1.5) (intensity 0.40) (color 0.78 0.84 1.00) (radius 0.5))
+  (light (pos 0.0 1.5 2.2) (intensity 0.36) (color 0.95 0.90 1.00) (radius 0.5))
+  (object "floor"
+    (surface (color 0.0900 0.0850 0.0800) (ka 0.2) (kd 0.72) (ks 0.04) (phong 8) (roi 1.0))
+    (sdf (plane (center 0 0 0) (normal 0 1 0) (offset 0))))
+  (object "canopy"
+    (surface (color 0.8550 0.8300 0.7600) (ka 0.26) (kd 0.82) (ks 0.05) (phong 10) (roi 1.0))
+    (sdf (capped-cone-ab (a 0 0.52 0) (b 0 0.88 0) (r1 0.31) (r2 0.06))))
+  (object "ring"
+    (surface (color 0.6600 0.3300 0.2600) (ka 0.18) (kd 0.74) (ks 0.14) (phong 24) (roi 1.0))
+    (sdf (torus (center 0 0.515 0) (major 0.305) (minor 0.022))))
+  (object "finial"
+    (surface (color 0.8550 0.8300 0.7600) (ka 0.24) (kd 0.8) (ks 0.06) (phong 12) (roi 1.0))
+    (sdf (union
+        (capped-cone-ab (a 0 0.87 0) (b 0 0.93 0) (r1 0.07) (r2 0.046))
+        (union
+          (torus (center 0 0.9 0) (major 0.062) (minor 0.016))
+          (union
+            (capped-cone-ab (a 0 0.93 0) (b 0 0.985 0) (r1 0.044) (r2 0.04))
+            (sphere (center 0 0.986 0) (radius 0.04)))))))
+  (object "eye"
+    (surface (color 0.9600 0.9550 0.9300) (ka 0.3) (kd 0.76) (ks 0.22) (phong 48) (roi 1.0))
+    (sdf (ellipsoid (center 0 0.7 -0.120275) (radii 0.115 0.105 0.1))))
+  (object "iris"
+    (surface (color 0.1800 0.1950 0.2150) (ka 0.14) (kd 0.52) (ks 0.4) (phong 60) (roi 1.0))
+    (sdf (union
+        (ellipsoid (center 0 0.716507 -0.188184) (radii 0.056 0.056 0.042))
+        (rotate (deg 0 0 0 -0.00074024 0.724882 -0.230994)
+          (mcolor (c 1 1 1) (ellipsoid (center -0.00074024 0.724882 -0.220437) (radii 0.015 0.015 0.012)))))))
+  (object "mouth"
+    (surface (color 0.6600 0.3300 0.2600) (ka 0.16) (kd 0.7) (ks 0.1) (phong 18) (roi 1.0))
+    (sdf (smooth-union (k 0.008)
+        (capsule (a 0.0902 0.5808 -0.2848) (b 0.0642 0.5712 -0.2848) (radius 0.0115))
+        (smooth-union (k 0.008)
+          (capsule (a 0.0642 0.5712 -0.2848) (b 0.0232 0.5657 -0.2848) (radius 0.0115))
+          (smooth-union (k 0.008)
+            (capsule (a 0.0232 0.5657 -0.2848) (b -0.0232 0.5657 -0.2848) (radius 0.0115))
+            (smooth-union (k 0.008)
+              (capsule (a -0.0232 0.5657 -0.2848) (b -0.0642 0.5712 -0.2848) (radius 0.0115))
+              (smooth-union (k 0.008)
+                (capsule (a -0.0642 0.5712 -0.2848) (b -0.0902 0.5808 -0.2848) (radius 0.0115))
+                (capsule (a -0.0902 0.5808 -0.2848) (b -0.0951 0.5923 -0.2848) (radius 0.0115)))))))))
+  (object "tongue"
+    (surface (color 0.8000 0.4700 0.4500) (ka 0.2) (kd 0.76) (ks 0.16) (phong 26) (roi 1.0))
+    (sdf (capsule (a 0 0.555 -0.3137) (b 0 0.505 -0.344) (radius 0.022))))
+  (object "limbs"
+    (surface (color 0.7800 0.7350 0.6400) (ka 0.2) (kd 0.76) (ks 0.08) (phong 16) (roi 1.0))
+    (sdf (union
+        (mirror (normal -1 0 0)
+          (union
+            (capsule (a 0.19 0.49 -0.01) (b 0.315 0.37 -0.035) (radius 0.031))
+            (torus (center 0.319 0.364 -0.035) (major 0.028) (minor 0.012))))
+        (cylinder-ab (a 0 0.5 0) (b 0 0.06 0) (radius 0.032)))))
+  (object "geta"
+    (surface (color 0.6000 0.4800 0.3400) (ka 0.16) (kd 0.72) (ks 0.12) (phong 20) (roi 1.0))
+    (sdf (translate (t 0 0.026 -0.01)
+        (union
+          (box (center 0 0 0) (size 0.086 0.015 0.11))
+          (union
+            (box (center 0 -0.03 -0.052) (size 0.076 0.016 0.013))
+            (box (center 0 -0.03 0.046) (size 0.076 0.016 0.013)))))))
+  (object "ties"
+    (surface (color 0.6600 0.3300 0.2600) (ka 0.16) (kd 0.72) (ks 0.12) (phong 20) (roi 1.0))
+    (sdf (mcolor (c 0.78 0.735 0.64)
+        (superquad (center 0 0.052 -0.0278216) (radii 0.043 0.043 0.0737569) (e1 2) (e2 2) (e3 2)))))
+)

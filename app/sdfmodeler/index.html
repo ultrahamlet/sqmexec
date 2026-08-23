@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>sdfmodeler — 階層SDFモデラー (sqm .ssq)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+:root {
+  --bg: #16181d; --panel: #1e2129; --panel2: #262a34; --line: #333845;
+  --fg: #d7dae2; --dim: #8a90a0; --acc: #e8973a; --sel: #2d4a6b;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  --treew: 270px; --inspw: 300px;
+  background: var(--bg); color: var(--fg);
+  font: 13px/1.5 "Hiragino Sans", "Noto Sans JP", system-ui, sans-serif;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  grid-template-columns: var(--treew) 5px 1fr 5px var(--inspw);
+  grid-template-areas: "tb tb tb tb tb" "tree sp1 view sp2 insp" "st st st st st";
+}
+.splitter {
+  cursor: col-resize; background: var(--line); opacity: 0.55;
+  touch-action: none; user-select: none;
+}
+.splitter:hover, .splitter.dragging { background: var(--acc); opacity: 1; }
+#sp1 { grid-area: sp1; }
+#sp2 { grid-area: sp2; }
+#toolbar {
+  grid-area: tb; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  padding: 6px 10px; background: var(--panel); border-bottom: 1px solid var(--line);
+}
+#toolbar .sp { flex: 1; }
+button, select, input[type=text], textarea {
+  background: var(--panel2); color: var(--fg); border: 1px solid var(--line);
+  border-radius: 4px; padding: 3px 9px; font: inherit;
+}
+button:hover { border-color: var(--acc); cursor: pointer; }
+button.danger:hover { border-color: #d05050; color: #f0a0a0; }
+label.chk { color: var(--dim); user-select: none; }
+#tree {
+  grid-area: tree; overflow: auto; background: var(--panel);
+  border-right: 1px solid var(--line); padding: 6px 0; user-select: none;
+}
+.obj-row {
+  display: flex; align-items: center; gap: 6px; padding: 4px 8px;
+  font-weight: 600; cursor: pointer; border-top: 1px solid var(--line);
+}
+.obj-row:first-child { border-top: none; }
+.obj-row .eye { width: 20px; text-align: center; color: var(--dim); }
+.obj-row .swatch { width: 12px; height: 12px; border-radius: 3px; border: 1px solid #0006; }
+.node-row { padding: 2px 8px; cursor: pointer; white-space: nowrap; }
+.node-row .eye { display: inline-block; width: 18px; text-align: center;
+  color: var(--dim); opacity: 0.35; }
+.node-row:hover .eye, .node-row.off .eye { opacity: 1; }
+.node-row.off { opacity: 0.45; }   /* レイマーチ表示から除外中 (祖先が除外中も含む) */
+.node-row.k-leaf { color: #9ecb8f; }
+.node-row.k-op { color: #7fb3d8; }
+.node-row.k-xform { color: #c9a86a; }
+.node-row:hover, .obj-row:hover { background: #ffffff10; }
+.node-row.sel, .obj-row.sel { background: var(--sel); }
+.node-row.dragging, .obj-row.dragging { opacity: 0.45; }
+.mchip {
+  display: inline-block; width: 9px; height: 9px; border-radius: 2px;
+  margin-left: 6px; border: 1px solid #0006; vertical-align: middle;
+}
+.node-row.drop-target, .obj-row.drop-target {
+  outline: 1.5px dashed var(--acc); outline-offset: -2px; background: #e8973a1c;
+}
+.add-obj { padding: 8px; color: var(--dim); cursor: pointer; }
+.add-obj:hover { color: var(--acc); }
+#viewwrap { grid-area: view; position: relative; min-width: 0; }
+#view { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+#gizmo {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  pointer-events: none; touch-action: none; overflow: visible;
+}
+#bones {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  pointer-events: none; overflow: visible;
+}
+#gizmo .ghandle { pointer-events: auto; cursor: grab; }
+#gizmo.dragging .ghandle { cursor: grabbing; }
+#hint {
+  position: absolute; left: 10px; bottom: 8px; color: #ffffff70; font-size: 11px;
+  pointer-events: none; text-shadow: 0 1px 2px #000;
+}
+#viewopts {
+  position: absolute; top: 8px; right: 10px; z-index: 2;
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end;
+  background: #1e2129cc; border: 1px solid var(--line); border-radius: 8px;
+  padding: 5px 12px; backdrop-filter: blur(4px); font-size: 12px;
+}
+#viewopts .chk { white-space: nowrap; }
+#quickadd {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  background: #1e2129d8; border: 1px solid var(--line); border-radius: 10px;
+  padding: 16px 20px; text-align: center; backdrop-filter: blur(4px);
+  max-width: min(420px, 92%); max-height: 86%; overflow: auto;
+}
+#quickadd .qa-title { color: var(--fg); font-weight: 600; margin-bottom: 10px; }
+#quickadd .qa-btns { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
+#quickadd .qa-btns button { padding: 7px 12px; font-size: 12.5px; white-space: nowrap; }
+#quickadd .qa-note { color: var(--dim); font-size: 11px; margin-top: 10px; }
+#inspector {
+  grid-area: insp; overflow: auto; background: var(--panel);
+  border-left: 1px solid var(--line); padding: 10px;
+}
+#inspector h3 { margin: 4px 0 10px; font-size: 13px; color: var(--acc); }
+#inspector hr { border: none; border-top: 1px solid var(--line); margin: 12px 0; }
+#inspector select { width: 100%; margin: 3px 0; }
+#inspector textarea { width: 100%; font: 11px/1.4 ui-monospace, monospace; resize: vertical; }
+.frow { display: flex; align-items: center; gap: 4px; margin: 4px 0; }
+.flabel { width: 64px; flex: none; color: var(--dim); font-size: 12px; }
+.num { display: flex; flex: 1; min-width: 0; }
+.num input { width: 100%; min-width: 0; padding: 2px 4px; border-radius: 4px 0 0 4px; }
+.num .grip {
+  width: 16px; flex: none; display: flex; align-items: center; justify-content: center;
+  background: var(--line); border-radius: 0 4px 4px 0; cursor: ew-resize;
+  color: var(--dim); font-size: 10px; user-select: none; touch-action: none;
+}
+.num .grip:hover { color: var(--acc); }
+.btnrow { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+#status {
+  grid-area: st; padding: 4px 10px; background: var(--panel);
+  border-top: 1px solid var(--line); color: var(--dim); font-size: 12px;
+}
+#status.err { color: #f08080; }
+/* sqm テストレンダ結果のモーダル (背景クリックで閉じる) */
+#rendermodal {
+  position: fixed; inset: 0; background: #000b; z-index: 50;
+  display: flex; align-items: center; justify-content: center;
+}
+#rendermodal[hidden] { display: none; }
+#rendermodal .rbox {
+  background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
+  padding: 10px; max-width: 94vw; max-height: 94vh;
+  display: flex; flex-direction: column; gap: 8px;
+}
+#rendermodal .rbox img { max-width: 90vw; max-height: 82vh; object-fit: contain; border-radius: 4px; }
+#rendermodal .rbar { display: flex; gap: 8px; align-items: center; color: var(--dim); font-size: 12px; }
+#rendermodal .rbar span { flex: 1; }
+</style>
+</head>
+<body>
+  <div id="toolbar">
+    <button id="btnNew">新規</button>
+    <select id="selSample" title="サンプルモデルを読み込み (Shift+選択 = ＋サンプル保存で作ったユーザー分を examples から削除)">
+      <option value="" selected disabled>サンプル…</option>
+      <option value="rabbit.ssq">rabbit (ウサギ)</option>
+      <option value="bear.ssq">bear (クマ)</option>
+      <option value="bear_fur.ssq">bear_fur (クマ・毛皮)</option>
+      <option value="bear_room.ssq">bear_room (クマ・部屋)</option>
+      <option value="frog.ssq">frog (カエル)</option>
+      <option value="arm.ssq">arm (関節チェーン)</option>
+      <option value="human.ssq">human (人体ボーン)</option>
+      <option value="human_smooth.ssq">human_smooth (人体・なめらか関節)</option>
+      <option value="humanbody.ssq">humanbody (人体・ポーズ付き)</option>
+      <option value="stone_axe.ssq">stone_axe (石斧)</option>
+      <option value="bronze_sword.ssq">bronze_sword (青銅剣)</option>
+      <option value="chrome_sword.ssq">chrome_sword (装飾剣)</option>
+      <option value="superquad_zoo.ssq">superquad_zoo (超楕円体標本)</option>
+      <option value="repeat3_test.ssq">repeat3 (3D反復デモ)</option>
+      <option value="scale_test.ssq">scale (拡縮デモ)</option>
+      <option value="leaf.ssq">leaf (木の葉superquad×100)</option>
+      <option value="dog.ssq">dog (犬リグ)</option>
+      <option value="trex.ssq">trex (T-REXリグ)</option>
+    </select>
+    <button id="btnOpen" title="sqm が焼いた PNG も開けます (シーン本文が iTXt メタデータとして埋まっているため)" onclick="document.getElementById('fileOpen').click()">開く (.ssq/.json/.png)</button>
+    <input type="file" id="fileOpen" accept=".ssq,.json,.txt,.png" style="display:none">
+    <button id="btnExport">書き出し .ssq</button>
+    <button id="btnSaveExample" title="現在のモデルを examples フォルダに保存 (サンプル一覧から読める)">＋サンプル保存</button>
+    <button id="btnImportModel" onclick="document.getElementById('fileImportModel').click()" title="別の .ssq からモデル(オブジェクト)だけを現在のシーンに取り込む (カメラ/ライトは維持)。.obj も可 — 「メッシュのまま置く」(三角形そのまま・transform編集可) か「SDFグリッドに焼く」(CSG/融合に使える近似) を選べる (要 serve.py)">モデル取込</button>
+    <input type="file" id="fileImportModel" accept=".ssq,.json,.txt,.obj" style="display:none">
+    <button id="btnSaveJson">保存 .json</button>
+    <button id="btnUndo" title="Ctrl+Z">↩ 元に戻す</button>
+    <button id="btnRedo" title="Ctrl+Shift+Z">↪ やり直し</button>
+  </div>
+  <div id="tree"></div>
+  <div id="sp1" class="splitter" title="ドラッグで幅を変更"></div>
+  <div id="viewwrap">
+    <canvas id="view"></canvas>
+    <svg id="bones" style="display:none"></svg>
+    <svg id="gizmo" style="display:none"></svg>
+    <div id="viewopts">
+      <select id="selQuality" title="描画解像度">
+        <option value="1">高品質</option>
+        <option value="0.75" selected>標準</option>
+        <option value="0.5">高速</option>
+      </select>
+      <label class="chk"><input type="checkbox" id="chkShadow"> 影</label>
+      <label class="chk"><input type="checkbox" id="chkGrid" checked> 床</label>
+      <label class="chk"><input type="checkbox" id="chkAxis" checked> 軸</label>
+      <label class="chk" title="選択パーツにギズモを表示 (移動: 矢印=軸/四角=平面/中央円=ビュー平面, Shift=0.1スナップ。回転: リング=ワールド軸回転, Shift=15°スナップ。キー W=移動 E=回転)"><input type="checkbox" id="chkGizmo" checked> ギズモ</label>
+      <select id="selGizmoMode" title="ギズモのモード (W=移動 / E=回転 / R=スケール)">
+        <option value="move" selected>移動</option>
+        <option value="rotate">回転</option>
+        <option value="scale">スケール</option>
+      </select>
+      <label class="chk" title="骨格 (カプセル軸=線分, 中心点, 関節pivot=リング) をオーバーレイ表示。ON中のドラッグはレイマーチを止めてボーンだけ追従 = ノード数が多くても軽い"><input type="checkbox" id="chkBones"> ボーン</label>
+      <select id="selView" title="ビューポートの表示方法。SDF=本物のレイマーチ (色/影/色分けが出るが重いモデルはハングしうる)。メッシュ=sqm の場ダンプ→marching cubes をラスタライズ (三角形数だけに依存=重いモデルでも滑らか・単色・要 serve.py)。数値は polygonize 精度。既定はメッシュ標準。色や造形を正確に見たいパーツは「🔍 SDF詳細」タブで">
+        <option value="0">SDF (レイマーチ)</option>
+        <option value="100">メッシュ 粗</option>
+        <option value="160" selected>メッシュ 標準</option>
+        <option value="240">メッシュ 高</option>
+        <option value="320">メッシュ 最高</option>
+      </select>
+      <select id="selBlobLv" hidden title="blob の再メッシュ解像度 (確定時)。低い = 粗い格子で場を均す = amp>1 の deform でも破れが閉じた塊になる / 高い = 真の等値面に近づき破れが出る。⬇OBJ 書き出しにもこの解像度が使われる。自動 = 通常6・deform時7">
+        <option value="0" selected>blob 自動</option>
+        <option value="5">blob Lv5 (粗)</option>
+        <option value="6">blob Lv6</option>
+        <option value="7">blob Lv7</option>
+        <option value="8">blob Lv8 (細・重)</option>
+      </select>
+      <button id="btnExportObj" hidden title="表示中のメッシュ (marching cubes 結果) を OBJ で書き出す。メッシュ表示中のみ表示。精度は左の表示セレクタの grid 値そのまま (粗/標準/高/最高)。blob 部分は blob Lv セレクタの解像度">⬇ OBJ</button>
+      <label class="chk" title="パーツごとに識別色で表示 (ツリーの●と対応)"><input type="checkbox" id="chkPart"> 色分け</label>
+      <label class="chk" title="視点距離の白黒可視化 (近=白, 遠=黒。sqm の depth シェーダー相当)"><input type="checkbox" id="chkDepth"> 深度</label>
+      <button id="btnSavePng" title="現在のビューポートを PNG で保存 (深度モード中は深度マップ)">📷 PNG</button>
+      <button id="btnRender" title="現在のカメラで sqm 本レンダリング — ドラフト品質 (Shift+クリック=高品質)。serve.py 経由で開いていて ../dist/sqm がある環境のみ">🎬 sqm</button>
+      <button id="btnRenderSettings" title="別タブでレンダリング設定を開く (解像度/影/GI/tonemap/DoF/bloom 等を細かく設定→レンダ。設定はブラウザに保存)">⚙ レンダ設定</button>
+    </div>
+    <div id="quickadd" hidden>
+      <div class="qa-title">最初のパーツを追加</div>
+      <div class="qa-btns"></div>
+      <div class="qa-note">パーツ同士は滑らかに融合します (滑らか和 k はツリーのルートで調整)</div>
+    </div>
+    <div id="hint"><b>v2026-07-12</b> | ドラッグ: 視点回転 / Shift+ドラッグ: パン / ホイール: ズーム / クリック: パーツ選択 / ギズモ: W=移動 E=回転 R=スケール (Shift: スナップ, 回転モードの中央ドット=pivot移動, sweepの緑ドット=経路点を個別移動) / 矢印キー: 移動</div>
+  </div>
+  <div id="sp2" class="splitter" title="ドラッグで幅を変更"></div>
+  <div id="inspector"></div>
+  <div id="status">準備中…</div>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

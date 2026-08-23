@@ -1,43 +1,36 @@
 # ⚠ このリポジトリは「実行環境の共有」が目的。
-#    sqm / dr_sbcl / vclay の **ソースコードと成果物は絶対に入れない**。
-#    (本体は各リポジトリが持ち、ここはそれを動かす足場だけを持つ)
+#    配るのは **動かすのに要るもの** (実行バイナリ・エディタ一式・手順) だけで、
+#    sqm / dr_sbcl の **ソースコードは入れない** (本体は各リポジトリが持つ)。
+#    配布物の更新は publish.ps1 で行う (手でコピーしない)。
 
-# --- 他リポジトリを間違ってここに clone/コピーした場合の保険 ---
-/sqm/
-/dr_sbcl/
-/vclay/
-/dist/
-/scenes/
-/shader/
-/assets/
-
-# --- ソースコード (万一持ち込まれても追跡しない) ---
+# --- ソースコード: 入れない ---
 *.c
 *.cpp
 *.h
 *.hpp
 *.lisp
 
-# --- ビルド成果物・巨大バイナリ ---
-*.exe
-*.dll
-*.dylib
-*.so
-*.o
-*.a
-*.wasm
-shader.core
-*.core
+# --- 他リポジトリを間違ってここに clone/コピーした場合の保険 ---
+/sqm/
+/dr_sbcl/
+/vclay/
+/dist/
+/shader/
 
-# --- 生成データ / シーン (本体リポジトリの持ち物) ---
-*.ssq
-*.obj
+# --- 生成データ (巨大。本体リポジトリ側の持ち物) ---
 *.f32
+*.f32.json
+app/sdfmodeler/examples/grids/
 
-# --- マシン固有の設定 (パスが入るので共有しない。example をコピーして作る) ---
+# --- マシン固有の設定 (パスが入るので共有しない) ---
 sqmexec.config.json
+app/sdfmodeler/.claude/
 
 # --- 診断・レンダーの出力 ---
-*.png
-!docs/*.png
-out/
+/out/
+*_out.png
+sqmexec_*.png
+
+# ※ bin/ (sqm.exe, shader.core) と app/ (sdfmodeler 一式) と scenes/ は
+#   **配布物なので追跡する**。上の *.c 等の除外が効かないよう、
+#   バイナリ拡張子はここでは無視しない。

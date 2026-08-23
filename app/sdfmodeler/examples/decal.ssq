@@ -1,0 +1,25 @@
+(scene
+  (background 0.62 0.68 0.78)
+  (camera (from 0.664516 1.24405 2.12999) (at 0 0.99 0) (up 0 1 0) (fov 34))
+  (light (pos -2.6 3.4 3.2) (intensity 1.40) (color 1.00 0.97 0.92) (radius 0.35))
+  (light (pos 3.0 1.4 2.2) (intensity 0.38) (color 0.72 0.82 1.00) (radius 0.6))
+  (light (pos 0.0 2.0 -3.4) (intensity 0.28) (color 1.00 0.94 0.86))
+  (object "ground"
+    (surface (color 0.80 0.80 0.82) (ka 0.26) (kd 0.80) (ks 0.05) (phong 14) (roi 1.0) (shader plastic) (param Ka 0.26) (param Kd 0.80) (param Ks 0.05) (param roughness 0.5))
+    (sdf (plane (center 0 0 0) (normal 0 1 0) (offset 0))))
+  (object "face"
+    (surface (color 0.95 0.93 0.89) (ka 0.22) (kd 0.85) (ks 0.20) (phong 55) (roi 1.0) (shader plastic) (param Ka 0.22) (param Kd 0.85) (param Ks 0.20) (param roughness 0.24))
+    (sdf (sphere (center 0 1 0) (radius 0.6))))
+  (object "eyes"
+    (surface (color 0.16 0.11 0.08) (ka 0.18) (kd 0.86) (ks 0.10) (phong 12) (roi 1.0) (shader plastic) (param Ka 0.18) (param Kd 0.86) (param Ks 0.10) (param roughness 0.68))
+    (sdf (union
+        (round (r 0.005)
+          (intersect
+            (onion (t 0.011) (round (r 0.018) (sphere (center 0 1 0) (radius 0.6))))
+            (ellipsoid (center -0.2511 1.0835 0.5385) (radii 0.135 0.078 0.34))))
+        (round (r 0.005)
+          (intersect
+            (onion (t 0.011) (round (r 0.018) (sphere (center 0 1 0) (radius 0.6))))
+            (ellipsoid (center 0.2511 1.0835 0.5385) (radii 0.135 0.078 0.34)))))))
+  ; (object "obj4") は空のためスキップ
+)

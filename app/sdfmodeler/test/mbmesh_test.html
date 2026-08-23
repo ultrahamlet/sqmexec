@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<!-- mbmesh WASM の動作検証 + 速度計測 (2026-08-23)
+     ネイティブ mbmesh_test の penguin (HEAD, 97 blob, no-blend 21 ペア) と
+     頂点数 / 三角形数 / index 総和 / 座標総和を突き合わせる。
+     serve.sh (または python3 -m http.server) で sdfmodeler/ を配信して
+     http://localhost:<port>/test/mbmesh_test.html を開く。 -->
+<html lang="ja"><head><meta charset="utf-8"><title>mbmesh wasm test</title>
+<style>body{font:14px monospace;background:#111;color:#ddd;padding:1em}
+.ok{color:#7f7}.ng{color:#f77}</style></head>
+<body>
+<h3>mbmesh.wasm 検証</h3>
+<pre id="out">loading...</pre>
+<script type="module">
+import { BlobMesher, parseSsqBlobs } from '../js/mbblob.js';
+const out = document.getElementById('out');
+const log = (s, cls) => { out.innerHTML += (cls ? `<span class="${cls}">${s}</span>` : s) + '\n'; };
+out.textContent = '';
+
+/* ネイティブ mbmesh_test (faces は ssq_edit --obj とバイト一致) の値 */
+const REF = { nvtx: 6878, ntri: 13744, idxsum: 141845540, possum: 3266.384364 };
+
+try {
+  const t0 = performance.now();
+  const mesher = await BlobMesher.create();
+  log(`wasm 初期化: ${(performance.now() - t0).toFixed(1)} ms`);
+
+  const text = await (await fetch('penguin_fixture.ssq')).text();
+  const { blobs, nbPairs } = parseSsqBlobs(text);
+  log(`parse: blob ${blobs.length} 個 / no-blend ${nbPairs.length} ペア`);
+
+  /* 1回目 (コールドスタート) */
+  let t = performance.now();
+  let m = mesher.mesh(blobs, nbPairs, 6);
+  log(`mesh pass1: ${(performance.now() - t).toFixed(1)} ms  ` +
+      `${m.positions.length / 3} verts / ${m.indices.length / 3} tris`);
+
+  /* 検証 */
+  const nvtx = m.positions.length / 3, ntri = m.indices.length / 3;
+  let idxsum = 0; for (const i of m.indices) idxsum += i;
+  let possum = 0; for (const p of m.positions) possum += p;
+  const ok1 = nvtx === REF.nvtx && ntri === REF.ntri;
+  const ok2 = idxsum === REF.idxsum;
+  const ok3 = Math.abs(possum - REF.possum) < 0.01;
+  log(`counts  ${nvtx}/${ntri}  (ref ${REF.nvtx}/${REF.ntri})`, ok1 ? 'ok' : 'ng');
+  log(`idxsum  ${idxsum}  (ref ${REF.idxsum})`, ok2 ? 'ok' : 'ng');
+  log(`possum  ${possum.toFixed(6)}  (ref ${REF.possum})`, ok3 ? 'ok' : 'ng');
+
+  /* 速度: 連続 20 回 (ドラッグ追従の実効レート) */
+  const N = 20;
+  t = performance.now();
+  for (let i = 0; i < N; i++) m = mesher.mesh(blobs, nbPairs, 6);
+  const per = (performance.now() - t) / N;
+  log(`mesh ×${N}: ${per.toFixed(1)} ms/回  (${(1000 / per).toFixed(0)} fps 相当)`);
+
+  /* 粗いレベル (ドラッグ中の降格用) */
+  t = performance.now();
+  for (let i = 0; i < N; i++) m = mesher.mesh(blobs, nbPairs, 5);
+  log(`level5 ×${N}: ${((performance.now() - t) / N).toFixed(1)} ms/回`);
+  t = performance.now();
+  for (let i = 0; i < N; i++) m = mesher.mesh(blobs, nbPairs, 7);
+  log(`level7 ×${N}: ${((performance.now() - t) / N).toFixed(1)} ms/回`);
+
+  log(ok1 && ok2 && ok3 ? '\n=== PASS ===' : '\n=== FAIL ===', ok1 && ok2 && ok3 ? 'ok' : 'ng');
+  window.__mbtest = { ok: ok1 && ok2 && ok3, perMs: per };
+} catch (e) {
+  log('ERROR: ' + e, 'ng');
+  window.__mbtest = { ok: false, error: String(e) };
+}
+</script>
+</body></html>

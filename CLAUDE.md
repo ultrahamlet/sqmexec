@@ -3,17 +3,27 @@
 **このリポジトリはレンダラー本体を含まない。** sqm / dr_sbcl / vclay を
 **動く状態に組み立てて実行する**ための手順・ラッパ・診断だけを持つ。
 
-## ⚠ ここに入れてはいけないもの (このリポジトリの境界)
+## このリポジトリの境界 — 入れるもの / 入れないもの
 
-**sqm 本体のソース (.c/.cpp/.h)・シェーダーのソース (.lisp)・ビルド成果物
-(sqm.exe / shader.core / *.o / *.a) を sqmexec に置かないこと。**
-それらは各リポジトリ (sqm / dr_sbcl) の持ち物で、ここに複製すると
-「どちらが本物か」が分からなくなる。sqmexec が持ってよいのは
-**環境を組み立てる手順・ラッパ・診断・文書だけ** (現状 16 ファイル・50KB 弱)。
-`.gitignore` がソースと成果物を拒否するようにしてあるので、
-追加時に無視されたら**それは意図的な拒否**。回避せず配置を見直す。
+sqm の配布モデル (**ソースを公開せず、バイナリ + shader.core だけ配れば
+受け取った側がレンダーでき、`.lisp` を書いて独自シェーダーも作れる**) を
+そのまま形にしたもの。したがって:
 
-シーン (.ssq) やアセットも同様に本体リポジトリ側に置く。
+**入れる (配布物)**
+- `bin/<platform>/sqm.exe` + `shader.core` — 実行に必要な2つ
+- `app/sdfmodeler/` — ブラウザエディタ一式 (html/js/wasm/serve.py)
+- `scenes/smoke.ssq` — 自己診断用の最小シーン
+- 手順・ラッパ・診断・文書
+
+**入れない**
+- **レンダラーのソース (.c/.cpp/.h) とシェーダーのソース (.lisp)** —
+  本体は sqm / dr_sbcl リポジトリの持ち物。`.gitignore` が拒否する
+- 巨大な生成データ (`*.f32`、`examples/grids/`)
+
+⚠ **`bin/` と `app/` は snapshot であって原本ではない。** 編集は必ず
+sqm / dr_sbcl 側で行い、`.\publish.ps1` でここへ流す。逆流させると
+「どちらが本物か」が分からなくなる。由来 (どのコミットから焼いたか) は
+`bin/VERSION.json` に記録される。
 
 ユーザーが「**sqm を実行したい**」「レンダーしたい」「sdfmodeler を開きたい」と
 言ったら、**まず下の「最初にやること」を実行する**。推測でパスを組み立てない。
@@ -65,6 +75,11 @@ Mac と絵が変わるのに**一見成功したように見える**。
 A/B 比較のつもりで `sqm_old.exe` などに改名すると **DR シェーダーが落ちるか
 segfault する**。別バージョンを置きたいときは**別ディレクトリに同じ名前で**置く。
 
+理由は実測で確定している: `shader.core` のインポート表に
+**`DLL Name: sqm.exe`** が入っている (shader.core はホスト実行ファイルから
+`stf` / `sqm_dr_sgv_get` 等を import する構造)。exe を改名するとこの解決が
+外れる。`objdump -p shader.core` で確認できる。
+
 ### ③ 環境変数はコール間で保持されない (エージェント向け)
 
 Claude Code のシェルツールは**呼び出しごとに新しいシェル**で、`export` や
@@ -93,9 +108,24 @@ mac/Linux は同名の `.sh` (`./doctor.sh` など)。引数は同じ並び。
 
 ---
 
-## リポジトリ構成の前提
+## 2つの使い方 — 実行するだけ / ソースからビルドする
 
-sqmexec は **sqm / dr_sbcl / vclay と同じ階層**に置く (自動検出する):
+### (A) 実行するだけ (配布先。ソース不要)
+
+**sqmexec をクローンするだけで動く。** 同梱の `bin/windows-x64/` を使う。
+sqm.exe は静的リンクで、**Windows 標準の UCRT だけで動く** —
+MSYS2 もコンパイラも要らない (MSYS2 を含まない最小 PATH で実測確認済み)。
+Python は sdfmodeler を使うときだけ必要。
+
+```powershell
+.\doctor.ps1                                   # 同梱バイナリで実地テストまで通る
+.\render.ps1 .\scenes\smoke.ssq out.png        # レンダー
+.\serve.ps1                                    # エディタ (同梱 app/sdfmodeler)
+```
+
+### (B) ソースからビルドする (開発機)
+
+sqmexec を **sqm / dr_sbcl / vclay と同じ階層**に置く (自動検出する):
 
 ```
 <workspace>/
@@ -105,13 +135,12 @@ sqmexec は **sqm / dr_sbcl / vclay と同じ階層**に置く (自動検出す�
   sqmexec/    ← このリポジトリ
 ```
 
-別の場所に置くなら `sqmexec.config.json` (下記 example をコピー) か
-環境変数 `SQM_WORKSPACE` でワークスペース根を教える。
+sqm/dist にビルド済みの exe があれば**同梱バイナリより優先**される
+(開発中は常に最新を見るため)。別の場所に置くなら `sqmexec.config.json`
+(example をコピー) か環境変数 `SQM_WORKSPACE` で根を教える。
 **vclay は sqm のビルドには不要** (リンクも include もしていない)。
 
----
-
-## 依存 (doctor.ps1 が全部チェックする)
+ビルド用の依存 (doctor が全部チェックする):
 
 | 用途 | Windows | mac |
 |---|---|---|
@@ -122,6 +151,14 @@ sqmexec は **sqm / dr_sbcl / vclay と同じ階層**に置く (自動検出す�
 
 **Windows で `C:\msys64\ucrt64\bin` が PATH に無いと、ビルドが原因を指さない
 エラーで死ぬ** (下記)。ラッパは自動で PATH に足す。
+
+### 配布物を更新する (開発機で)
+
+```powershell
+.\build.ps1      # ソースからビルド
+.\publish.ps1    # bin/ と app/ へ流し込み、VERSION.json に由来を記録
+git add -A; git commit
+```
 
 ---
 

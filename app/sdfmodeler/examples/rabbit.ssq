@@ -1,0 +1,45 @@
+; rabbit.ssq — bear.ssq 構造ベースのウサギのぬいぐるみ (sdfmodeler サンプル)
+;   bear との差分: 長い耳(rotate+mirror)+ピンク内耳・丸いポンポン尻尾・
+;   小さめマズル・大きい足・ピンクの鼻
+(scene
+  (background 0.60 0.64 0.72)
+  (camera (from 0.9 2.7 -7.2) (at 0 1.7 0) (up 0 1 0) (fov 40))
+  (light (pos 6 7 -7)(intensity 1.4)(color 1.0 0.95 0.85)(radius 0.6))
+  (light (pos -6 3 -3)(intensity 0.35)(color 0.7 0.8 1.0))
+  (light (pos 0 8 5)(intensity 0.3)(color 1 1 1))
+  (object "ground"
+    (surface (color 0.42 0.38 0.33)(ka 0.3)(kd 0.8)(ks 0.1)(phong 8)(roi 1.0))
+    (sdf (plane (center 0 0 0))))
+  (object "rabbit"
+    (surface (color 0.58 0.53 0.47)(ka 0.26)(kd 0.85)(ks 0.15)(phong 12)(roi 1.0))
+    (sdf (smooth-union (k 0.08)
+        (ellipsoid (center 0 1.0 0) (radii 0.7 0.9 0.62))
+        (smooth-union (k 0.08)
+          (ellipsoid (center 0 2.25 0) (radii 0.56 0.52 0.54))
+          (smooth-union (k 0.08)
+            (ellipsoid (center 0 2.06 -0.42) (radii 0.24 0.17 0.16))
+            (smooth-union (k 0.06)
+              (mirror (normal -1 0 0)
+                (rotate (deg 0 0 -14)
+                  (ellipsoid (center 0.24 3.15 0.04) (radii 0.17 0.58 0.12))))
+              (smooth-union (k 0.08)
+                (mirror (normal -1 0 0) (capsule (a 0.52 1.6 -0.05) (b 0.92 1.02 -0.35) (radius 0.17)))
+                (smooth-union (k 0.08)
+                  (mirror (normal -1 0 0) (capsule (a 0.4 0.45 -0.1) (b 0.75 0.28 -0.6) (radius 0.24)))
+                  (sphere (center 0 0.72 0.62) (radius 0.22))))))))))
+  (object "rabbit-cream"
+    (surface (color 0.82 0.78 0.72)(ka 0.28)(kd 0.85)(ks 0.15)(phong 12)(roi 1.0))
+    (sdf (union
+        (ellipsoid (center 0 2.02 -0.48) (radii 0.21 0.14 0.13))
+        (ellipsoid (center 0 0.95 -0.54) (radii 0.4 0.55 0.15)))))
+  (object "rabbit-pink"
+    (surface (color 0.80 0.48 0.50)(ka 0.28)(kd 0.85)(ks 0.15)(phong 12)(roi 1.0))
+    (sdf (union
+        (mirror (normal -1 0 0)
+          (rotate (deg 0 0 -14)
+            (ellipsoid (center 0.24 3.22 -0.06) (radii 0.09 0.4 0.05))))
+        (sphere (center 0 2.14 -0.56) (radius 0.07)))))
+  (object "rabbit-dark"
+    (surface (color 0.04 0.032 0.028)(ka 0.1)(kd 0.5)(ks 0.12)(phong 120)(roi 1.0))
+    (sdf (mirror (normal -1 0 0) (sphere (center 0.2 2.4 -0.48) (radius 0.07)))))
+)

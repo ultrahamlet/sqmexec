@@ -1,0 +1,94 @@
+; sdf_decal_test.ssq — **ある SDF を別の SDF の表面に沿わせる** (decal) の実演
+;
+;   ./dist/sqm -i scenes/sdf_decal_test.ssq -o /tmp/decal.png -x 960 -y 460 -A 3 -s 2 -O 6 -T aces
+;
+; 問題: 平たい楕円体を球の上に「置く」と、中心は飛び出し縁は潜る。曲率が強い所や
+;       法線から外れた所ほど破綻し、見かけの大きさも痩せる (招き猫の目は幅 0.215
+;       を指定して見かけ 0.112 = 52% しか出ていなかった)。
+;
+; 解: **ホストの距離場そのものを使う**。
+;       shell  = (onion (t T) (round (r R) <host>))
+;              = ホスト表面から [R-T, R+T] にある厚み 2T の殻。距離場なので
+;                **厚みはホストの曲率に完全に追従する**
+;       decal  = (intersect shell <cutter>)
+;                cutter = 「どの範囲を残すか」を決める立体 (法線方向に伸ばす)。
+;                cutter の断面が decal の輪郭になる = 好きな形が貼れる
+;       (round (r r2) decal) で縁を丸めると彫刻的な盛り上がりになる。
+;
+; 要点:
+;   ・エンジンの改修は不要。既存の round / onion / intersect だけで厳密に出る
+;   ・**ホストの SDF を decal 側にも書く** (別 object = 別材質にするため)。
+;     ホストが重いツリーなら、decal には**近似プロキシ** (この例なら球1個) を
+;     渡せばよい — 表面が一致していれば decal は正しく沿う
+;   ・cutter は法線方向に十分長く。短いと殻を切り残して decal が欠ける
+;
+; 左列 = 素朴に置いた楕円体 (比較用) / 右列 = 沿わせた decal。
+; 掠める角度に置いた4枚で差が出る (azimuth 0/35/65/85 度)。
+
+(scene
+  (background 0.62 0.68 0.78)
+  (camera (from 3.30 1.55 3.30) (at 0 1.02 0) (up 0 1 0) (fov 34))
+  (light (pos -4.0 5.5 4.5) (intensity 1.45) (color 1.00 0.97 0.92) (radius 0.4))
+  (light (pos  5.0 2.0 3.0) (intensity 0.40) (color 0.72 0.82 1.00) (radius 0.6))
+  (light (pos  0.0 3.0 -5.0) (intensity 0.30) (color 1.00 0.94 0.86))
+
+  (object "ground"
+    (surface (color 0.80 0.80 0.82) (ka 0.26) (kd 0.80) (ks 0.05) (phong 14) (roi 1.0)
+             (shader plastic) (param Ka 0.26) (param Kd 0.80) (param Ks 0.05)
+             (param roughness 0.5))
+    (sdf (plane (center 0 0 0))))
+
+  ; ── ホスト (両方に共通の球) ─────────────────────────────────────────────
+  (object "host"
+    (surface (color 0.94 0.92 0.88) (ka 0.22) (kd 0.84) (ks 0.22) (phong 60) (roi 1.0)
+             (shader plastic) (param Ka 0.22) (param Kd 0.84) (param Ks 0.22)
+             (param roughness 0.22))
+    (sdf (sphere (center 0 1.02 0) (radius 1.0))))
+
+  ; ── ✗ 素朴に「置いた」楕円体 (viewer 左手前 = -X 側) ──────────────────
+  ;    表面点に中心を置き、法線を向けただけ。掠める位置ほど縁が潜り、
+  ;    中心は飛び出す。曲率が変われば貼り直しが要る。
+  (object "naive"
+    (surface (color 0.30 0.36 0.62) (ka 0.20) (kd 0.86) (ks 0.14) (phong 26) (roi 1.0)
+             (shader plastic) (param Ka 0.20) (param Kd 0.86) (param Ks 0.14)
+             (param roughness 0.45))
+    (sdf (union
+      ; azimuth 0°  (法線 = -X)
+      (translate (t -1.0 1.02 0.0)
+        (rotate (deg 0 90 0) (ellipsoid (center 0 0 0) (radii 0.26 0.26 0.05))))
+      ; azimuth 35°
+      (translate (t -0.819 1.02 -0.574)
+        (rotate (deg 0 125 0) (ellipsoid (center 0 0 0) (radii 0.26 0.26 0.05))))
+      ; azimuth 65°
+      (translate (t -0.423 1.02 -0.906)
+        (rotate (deg 0 155 0) (ellipsoid (center 0 0 0) (radii 0.26 0.26 0.05))))
+      ; azimuth 85° (ほぼ真横)
+      (translate (t -0.087 1.02 -0.996)
+        (rotate (deg 0 175 0) (ellipsoid (center 0 0 0) (radii 0.26 0.26 0.05)))))))
+
+  ; ── ○ 沿わせた decal (viewer 右手前 = +X 側) ───────────────────────────
+  ;    shell = onion(round(host,0.020), 0.013) → 表面から [0.007, 0.033] の殻。
+  ;    cutter = 法線方向に伸ばした楕円体 (長さ 0.8) で輪郭を切り出す。
+  ;    (round (r 0.006) ..) で縁を丸めて彫刻的に。
+  (object "decal"
+    (surface (color 0.72 0.34 0.20) (ka 0.20) (kd 0.86) (ks 0.16) (phong 30) (roi 1.0)
+             (shader plastic) (param Ka 0.20) (param Kd 0.86) (param Ks 0.16)
+             (param roughness 0.42))
+    (sdf (union
+      (round (r 0.006) (intersect
+        (onion (t 0.013) (round (r 0.020) (sphere (center 0 1.02 0) (radius 1.0))))
+        (translate (t 1.0 1.02 0.0)
+          (rotate (deg 0 90 0) (ellipsoid (center 0 0 0) (radii 0.26 0.26 0.40))))))
+      (round (r 0.006) (intersect
+        (onion (t 0.013) (round (r 0.020) (sphere (center 0 1.02 0) (radius 1.0))))
+        (translate (t 0.819 1.02 -0.574)
+          (rotate (deg 0 55 0) (ellipsoid (center 0 0 0) (radii 0.26 0.26 0.40))))))
+      (round (r 0.006) (intersect
+        (onion (t 0.013) (round (r 0.020) (sphere (center 0 1.02 0) (radius 1.0))))
+        (translate (t 0.423 1.02 -0.906)
+          (rotate (deg 0 25 0) (ellipsoid (center 0 0 0) (radii 0.26 0.26 0.40))))))
+      (round (r 0.006) (intersect
+        (onion (t 0.013) (round (r 0.020) (sphere (center 0 1.02 0) (radius 1.0))))
+        (translate (t 0.087 1.02 -0.996)
+          (rotate (deg 0 5 0) (ellipsoid (center 0 0 0) (radii 0.26 0.26 0.40)))))))))
+)

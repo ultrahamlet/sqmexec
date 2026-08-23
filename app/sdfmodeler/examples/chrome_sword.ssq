@@ -1,0 +1,70 @@
+; chrome_sword.ssq — 装飾ロングソード (新品)。sdfmodeler デザイン用。
+;   刃 = クローム (菱形断面superquad, 中脊+両刃) / 鍔・柄・柄頭 = 銀鋼 + 装飾
+;   宝石 = ルビー(鍔中央)/サファイア(柄頭)/エメラルド(鍔端×2) の八面体ジェム
+;   縦向き: 切先 +y(上) → 鍔 → 柄 → 柄頭 -y(下)。クローム反射用に暗い地面を1枚。
+(scene
+  (background 0.82 0.85 0.90)
+  (camera (from 2.55 1.35 6.60) (at 0 1.25 0) (up 0 1 0) (fov 40))
+  (light (pos 7 9 6) (intensity 1.30) (color 1.0 0.98 0.94) (radius 0.6))
+  (light (pos -7 3 -2) (intensity 0.40) (color 0.7 0.85 1.0))
+  (light (pos 0 4 -9) (intensity 0.55) (color 1.0 1.0 1.0))
+
+  ; ── 反射用の暗い地面 (クロームに上=明/下=暗 の映り込みを与える) ──
+  (object "ground"
+    (surface (color 0.20 0.21 0.24) (ka 0.5) (kd 0.7) (ks 0.05) (phong 8) (roi 1.0) (shader matte))
+    (sdf (plane (center 0 -1.15 0))))
+
+  ; ── 刃: クローム (菱形断面=中脊+両刃、切先へ長くテーパ) ──
+  (object "blade"
+    (surface (color 0.86 0.88 0.92) (ka 0.10) (kd 0.15) (ks 0.9) (phong 0) (roi 1.0)
+             (shader pbrsurface)
+             (param Ka 0.10) (param roughness 0.15) (param metallic 1.0) (param Kr 1.0))
+    (sdf
+      (superquad (center 0 1.85 0) (radii 0.245 2.00 0.072)
+                 (e1 1.30) (e2 1.0) (e3 1.0))))
+
+  ; ── 鍔・柄・柄頭・巻き環: 銀鋼 (装飾) ──
+  (object "hilt"
+    (surface (color 0.78 0.80 0.84) (ka 0.12) (kd 0.30) (ks 0.8) (phong 0) (roi 1.0)
+             (shader pbrsurface)
+             (param Ka 0.12) (param roughness 0.22) (param metallic 0.95) (param Kr 0.9))
+    (sdf
+      (smooth-union (k 0.015)
+        ; 鍔 (クロスガード): 幅広で端が尖る (e で角を作る)
+        (mcolor (c 0.80 0.82 0.86)
+          (superquad (center 0 0 0) (radii 0.60 0.095 0.155) (e1 2.4) (e2 2.6) (e3 2.4)))
+        ; 柄 (握り): やや暗い金属
+        (mcolor (c 0.46 0.44 0.46)
+          (cylinder (center 0 -0.46 0) (radius 0.085) (height 0.36)))
+        ; 巻き環 3本
+        (mcolor (c 0.82 0.83 0.88)
+          (torus (center 0 -0.25 0) (major 0.10) (minor 0.022)))
+        (mcolor (c 0.82 0.83 0.88)
+          (torus (center 0 -0.46 0) (major 0.10) (minor 0.022)))
+        (mcolor (c 0.82 0.83 0.88)
+          (torus (center 0 -0.67 0) (major 0.10) (minor 0.022)))
+        ; 柄頭 (ポンメル): 扇状に広がる装飾ブロック
+        (mcolor (c 0.80 0.82 0.86)
+          (superquad (center 0 -0.95 0) (radii 0.24 0.10 0.15) (e1 2.0) (e2 2.2) (e3 2.6)))
+        ; 鍔中央のマウント (宝石台)
+        (mcolor (c 0.72 0.74 0.78)
+          (box (center 0 0 0.13) (size 0.10 0.085 0.05))))))
+
+  ; ── 宝石: 八面体カットのジェム (色ごとに mcolor。色が出るグロッシー) ──
+  (object "gems"
+    (surface (color 1 1 1) (ka 0.30) (kd 0.90) (ks 1.0) (phong 0) (kt 0) (roi 1.0)
+             (shader pbrsurface)
+             (param Ka 0.30) (param roughness 0.06) (param metallic 0.0) (param Kr 0.14))
+    (sdf
+      (union
+        ; ルビー (鍔中央)
+        (mcolor (c 0.78 0.06 0.12)
+          (octahedron (center 0 0 0.185) (size 0.10)))
+        ; サファイア (柄頭)
+        (mcolor (c 0.10 0.22 0.78)
+          (octahedron (center 0 -0.95 0.15) (size 0.085)))
+        ; エメラルド (鍔の両端)
+        (mcolor (c 0.10 0.58 0.28)
+          (octahedron (center 0.50 0 0.10) (size 0.06)))
+        (mcolor (c 0.10 0.58 0.28)
+          (octahedron (center -0.50 0 0.10) (size 0.06)))))))

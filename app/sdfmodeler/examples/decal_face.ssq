@@ -1,0 +1,59 @@
+; decal_face.ssq — **decal で顔に目を貼る** 最小例 (2026-08-03)
+;
+;   ./dist/sqm -i scenes/decal_face.ssq -o /tmp/face.png -x 760 -y 700 -A 3 -s 2 -O 6 -T aces
+;
+; 平たい楕円体を球の上に「置く」と、中心は飛び出し縁は潜る。曲率が強いほど破綻し、
+; **見かけの大きさも痩せる** (指定 0.215 幅の目が実効 0.112 しか出なかった実例あり)。
+; ここでは**ホストの距離場そのもの**から目を切り出す:
+;
+;   shell  = (onion (t 0.011) (round (r 0.018) <顔と同じ球>))
+;          = 顔の表面から [0.007, 0.029] にある厚み 0.022 の殻。
+;            距離場なので**厚みが顔の曲率に完全追従**する
+;   cutter = 目の位置に置いた扁平な楕円体 (横 0.27 × 縦 0.156、奥行き 0.68)。
+;            **殻を貫くだけの奥行き**があればよく、この断面が目の輪郭になる
+;   eye    = (intersect shell cutter) を (round (r 0.005)) で縁だけ丸めたもの
+;
+; 要点:
+;   ・エンジン改修は不要。round / onion / intersect は既存オペだけ
+;   ・**顔の SDF を目の側にも書く** (別 object = 別材質にするため)。ホストが重い
+;     ツリーなら目の側は**近似プロキシ**でよい — 表面が一致していれば正しく沿う
+;   ・カッターは殻を貫く奥行きを取る。足りないと殻を切り残して目が欠ける
+;   ・R > T にしておくと decal が顔に潜らず必ず外側へ出る
+;   ・**`elongate` で「法線方向に伸ばす」のは誤り** — elongate は軸平行の箱掃引で、
+;     斜め方向には伸びない (h に負値を入れると clamp が破綻して帯になる)。
+;     方向を厳密に合わせたいときは rotate-mat か、両端点で決まる cylinder-ab を使う
+;   ・sdfmodeler でもそのまま開ける (専用ノード不要。examples/decal_test.ssq も参照)
+
+(scene
+  (background 0.62 0.68 0.78)
+  (camera (from 0.62 1.18 2.15) (at 0 0.99 0) (up 0 1 0) (fov 34))
+  (light (pos -2.6 3.4 3.2) (intensity 1.40) (color 1.00 0.97 0.92) (radius 0.35))
+  (light (pos  3.0 1.4 2.2) (intensity 0.38) (color 0.72 0.82 1.00) (radius 0.6))
+  (light (pos  0.0 2.0 -3.4) (intensity 0.28) (color 1.00 0.94 0.86))
+
+  (object "ground"
+    (surface (color 0.80 0.80 0.82) (ka 0.26) (kd 0.80) (ks 0.05) (phong 14) (roi 1.0)
+             (shader plastic) (param Ka 0.26) (param Kd 0.80) (param Ks 0.05)
+             (param roughness 0.5))
+    (sdf (plane (center 0 0 0))))
+
+  ; ── 顔 (ホスト) ────────────────────────────────────────────────────────
+  (object "face"
+    (surface (color 0.95 0.93 0.89) (ka 0.22) (kd 0.85) (ks 0.20) (phong 55) (roi 1.0)
+             (shader plastic) (param Ka 0.22) (param Kd 0.85) (param Ks 0.20)
+             (param roughness 0.24))
+    (sdf (sphere (center 0 1 0) (radius 0.6))))
+
+  ; ── 目 (decal) — 顔の殻を目の輪郭で切り出したもの ──────────────────────
+  (object "eyes"
+    (surface (color 0.16 0.11 0.08) (ka 0.18) (kd 0.86) (ks 0.10) (phong 12) (roi 1.0)
+             (shader plastic) (param Ka 0.18) (param Kd 0.86) (param Ks 0.10)
+             (param roughness 0.68))
+    (sdf (union
+      (round (r 0.005) (intersect
+        (onion (t 0.011) (round (r 0.018) (sphere (center 0 1 0) (radius 0.6))))
+        (ellipsoid (center -0.2511 1.0835 0.5385) (radii 0.135 0.078 0.34))))
+      (round (r 0.005) (intersect
+        (onion (t 0.011) (round (r 0.018) (sphere (center 0 1 0) (radius 0.6))))
+        (ellipsoid (center 0.2511 1.0835 0.5385) (radii 0.135 0.078 0.34)))))))
+)
