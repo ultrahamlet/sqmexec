@@ -16,3 +16,6 @@
 *.png   binary
 *.obj   binary
 *.f32   binary
+
+# シーンは LF 固定 (クローン先の改行差で挙動が変わる余地を残さない)
+*.ssq   text eol=lf
