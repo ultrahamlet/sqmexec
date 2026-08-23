@@ -1,0 +1,7 @@
+# マシン固有の設定 (パスが入るので共有しない。example をコピーして作る)
+sqmexec.config.json
+
+# 診断・レンダーの出力
+*.png
+!docs/*.png
+out/

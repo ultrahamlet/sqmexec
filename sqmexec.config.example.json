@@ -1,0 +1,12 @@
+{
+  "_comment": "sqmexec.config.json にコピーして使う (コピー先は gitignore 済み = マシン固有の設定を共有しない)。既定では sqmexec の親をワークスペースとして自動検出するので、標準配置なら設定不要。",
+
+  "_workspace": "sqm/ dr_sbcl/ vclay/ が並ぶディレクトリ。省略時は sqmexec の親",
+  "workspace": "C:/Users/you/Documents/sqm_win",
+
+  "_sbcl": "sbcl 実行ファイルの絶対パス。PATH に居るなら省略可",
+  "sbcl": "C:/Users/you/sbcl/PFiles/Steel Bank Common Lisp/sbcl.exe",
+
+  "_msys2": "MSYS2 の根。既定は C:/msys64",
+  "msys2": "C:/msys64"
+}

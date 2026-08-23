@@ -1,0 +1,10 @@
+# ⚠ このリポジトリは Windows と mac で共有する。
+# シェルスクリプトが CRLF でチェックアウトされると mac/Linux で
+#   /usr/bin/env: 'bash\r': No such file or directory
+# となって動かない (原因が分かりにくい典型) ので LF に固定する。
+*.sh    text eol=lf
+*.json  text eol=lf
+*.md    text eol=lf
+
+# PowerShell は CRLF が自然。BOM 付き UTF-8 で保存すること (CLAUDE.md 参照)
+*.ps1   text eol=crlf
