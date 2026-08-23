@@ -1404,7 +1404,11 @@ float sSub(float da, float db, float k){
    編集パーツ+隣接だけをレイマーチする「フォーカスシェーダ」用 (layout は不変)。 */
 export function buildProgram(doc, focusSet, opts) {
   /* opts.sweepApprox: sweep 任意断面を近似チューブで出す軽量モード (ドラッグ中用)。
-     レイアウトが変わるので呼び側は setParams(collectParams(doc, prog.layout)) も行うこと */
+     レイアウトが変わるので呼び側は setParams(collectParams(doc, prog.layout)) も行うこと
+     opts.lite: 影/AO をスタブ化してコンパイル時間を縮める (下の ${lite} 参照)。
+     **レイアウトは lite でも変わらない**ので、精密版と params/テクスチャを共有でき、
+     プログラムの差し替えだけで往復できる (app.js の2段コンパイル) */
+  const lite = !!(opts && opts.lite);
   const layout = buildLayout(doc, !!(opts && opts.sweepApprox));
   /* 枝刈りガードのバウンディング球は node params の直後 (subSphBase) からパラメータ
      テクスチャに相乗りさせる (emit が guards を埋め、下で parCount を延長)。
@@ -1594,7 +1598,16 @@ vec2 march(vec3 ro, vec3 rd){
   return vec2(t, m);
 }
 
-float softShadow(vec3 ro, vec3 rd, float tmax){
+${lite ? `/* ── 軽量モード (opts.lite) ──────────────────────────────────
+   影と AO を**コンパイル時に**落としてスタブ化する。狙いは実行速度ではなく
+   **コンパイル時間**: この2つは map() の静的呼び出し箇所を2つ占め、
+   ANGLE→HLSL→FXC は呼び出しごとに SDF ツリーを丸ごとインライン展開するため、
+   コンパイル時間が展開コピー数に対して超線形に伸びる。
+   実測 (RTX 3090 / 24リーフ 34KB): 呼び出し 5箇所 32.4秒 → 3箇所 11.3秒。
+   構造編集のたびに走る再コンパイルをこれで短縮し、精密版 (影/AO あり) は
+   編集が落ち着いてから裏で焼いて差し替える (app.js の2段コンパイル)。 */
+float softShadow(vec3 ro, vec3 rd, float tmax){ return 1.0; }
+float calcAO(vec3 p, vec3 n){ return 1.0; }` : `float softShadow(vec3 ro, vec3 rd, float tmax){
   float res = 1.0, t = 0.03;
   for (int i = 0; i < 48; i++) {
     float h = map(ro + rd * t).x;
@@ -1615,7 +1628,7 @@ float calcAO(vec3 p, vec3 n){
     sca *= 0.75;
   }
   return clamp(1.0 - 2.2 * occ, 0.0, 1.0);
-}
+}`}
 
 vec3 shade(vec3 ro, vec3 rd, float t, float m, out float selD){
   vec3 p = ro + rd * t;
