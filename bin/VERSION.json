@@ -3,8 +3,8 @@
     "platforms":  {
                       "windows-x64":  {
                                           "sqm":  {
-                                                      "commit":  "c318a29",
-                                                      "subject":  "sdfmodeler: 2段コンパイル (軽量版→精密版) — 構造編集の初回表示を 3〜4倍速く",
+                                                      "commit":  "b0293b4",
+                                                      "subject":  "Revert \"sdfmodeler: 2段コンパイル\" と \"calcNormal ループ化\" — ユーザー指示により差し戻し",
                                                       "bytes":  4986076
                                                   },
                                           "shader_core":  {
@@ -18,7 +18,7 @@
                   },
     "app":  {
                 "sdfmodeler":  {
-                                   "commit":  "c318a29",
+                                   "commit":  "b0293b4",
                                    "note":  "sqm/sdfmodeler の追跡ファイルの snapshot。原本は sqm 側"
                                }
             }

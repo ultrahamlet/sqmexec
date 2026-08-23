@@ -550,34 +550,13 @@ async function ensureGrids() {
    パラメータを残す。ドラッグ等の updateParams もこの間はスキップし、
    完了時に最新 doc から作り直すので編集は取りこぼさない。 */
 let layoutPending = false;
-
-/* ── 2段コンパイル (影/AO をコンパイル時に切った軽量版 → 精密版) ──────
-   構造編集 (ノード追加/削除/種類変更) のたびに GLSL を焼き直す必要があるが、
-   ANGLE→HLSL→FXC は map() の**静的呼び出し箇所ごとに SDF ツリーを丸ごと
-   インライン展開**するため、コンパイル時間が展開コピー数に対して超線形に伸びる。
-   実測 (RTX 3090 / 24リーフ): 5箇所 32.4秒 → 影/AO を外して3箇所 11.3秒。
-   → まず軽量版を焼いて**編集結果をすぐ見せ**、手が止まったら精密版に差し替える。
-   レイアウトは同一なので params/テクスチャは共有でき、差し替えは
-   setProgram だけで済む (viewer は毎フレーム uniform を送り直すので安全)。 */
-const FULL_COMPILE_IDLE_MS = 1200;   /* この時間 構造編集が無ければ精密版を焼く */
-const LITE_MIN_LEAVES = 6;           /* これ以下は元々速いので2段にしない */
-let fullTimer = null;
-
 function rebuild() {
   sticky = null;
   scheduleMesh();          /* uniform 超過で早期 return しても メッシュ側は更新する */
   scheduleBlobMesh();      /* native blob は WASM 再メッシュ (GLSL に出ない) */
   refreshObjMeshes();      /* mesh(OBJ) も GLSL に出ない — ラスタ表示を同期 */
-  clearTimeout(fullTimer);
-  /* 小さいシーンは軽量版を挟むと「影が出て消える」だけ損なので直接 精密版 */
-  const twoStage = totalLeafCount() > LITE_MIN_LEAVES;
-  compileStage(twoStage);
-}
-
-/* lite=true なら軽量版を焼き、完了後にアイドルを待って精密版を予約する */
-function compileStage(lite) {
   try {
-    const prog = buildProgram(doc, null, lite ? { lite: true } : undefined);
+    const prog = buildProgram(doc);
     const need = countUniformVectors(prog.frag);
     const max = viewer.maxFragUniformVectors;
     if (max && need > max) {
@@ -593,7 +572,7 @@ function compileStage(lite) {
        onDone が同期で走るので、後に置くと確定表示を「コンパイル中…」で潰す。 */
     const info = (tail) => setStatus(`ノード ${layout.order.length}`
                                      + ` / パラメータ ${layout.parCount} / ${tail}`);
-    info(lite ? '簡易表示をコンパイル中…' : 'コンパイル中…');
+    info('コンパイル中…');
     layoutPending = true;
     viewer.setProgram(
       prog.frag,
@@ -609,14 +588,7 @@ function compileStage(lite) {
         viewer.setMatColors(mc.arr, mc.hasAny);
         viewer.setColors(prog.colors);
         updateSelUniform();
-        if (lite) {
-          info(`簡易表示 ${viewer.compileMs.toFixed(0)}ms (影/AO なし) — 精密版を準備中`);
-          /* 手が止まってから精密版へ。次の構造編集が来たら rebuild が取り消す */
-          clearTimeout(fullTimer);
-          fullTimer = setTimeout(() => compileStage(false), FULL_COMPILE_IDLE_MS);
-        } else {
-          info(`コンパイル ${viewer.compileMs.toFixed(0)}ms`);
-        }
+        info(`コンパイル ${viewer.compileMs.toFixed(0)}ms`);
       });
     ensureGrids();                 /* 取込グリッドの3Dテクスチャを用意 (非同期・初回のみ取得) */
     viewer.setLights(doc.lights);        /* 配置に依存しない uniform は即時でよい */
