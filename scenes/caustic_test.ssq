@@ -1,0 +1,15 @@
+; caustic_test.ssq — リアル・コースティクス (フォトンマッピング) のデモ。
+;
+; 推奨: ./sqm -i ../scenes/caustic_test.ssq -o /tmp/out.png -x 500 -y 450 -A 2 -s 1 -D 4 -K 2000000
+;   -K photons[:radius] でフォトンマッピングを有効化 (既定オフ)。SQM_CAUSTIC_GAIN で強度。
+;   ガラス球がレンズとして真上の光を床に集める集光点が、球の影の中心に出る (物理的に正しい)。
+;   -K を外すと従来どおり (影の中心は暗いまま)。外部アセット不要でどの環境でも再現できる。
+(scene
+  (background 0.10 0.11 0.13)
+  (camera (from 0 2.6 3.6) (at 0 0.3 0) (up 0 1 0) (fov 40))
+  (light (pos 0 5 0.5)(intensity 2.4)(color 1 1 1)(radius 0.2))
+  (object "floor" (surface (color 0.85 0.85 0.87)(ka 0.15)(kd 0.85)(ks 0.02)(phong 8)(shader plastic))
+    (sdf (plane (center 0 0 0))))
+  (object "ball" (surface (color 0.9 0.95 1.0)(ka 0.0)(kd 0.0)(ks 0.12)(phong 140)(kt 0.95)(roi 1.5)(shader glass))
+    (sdf (sphere (center 0 0.85 0)(radius 0.55))))
+)

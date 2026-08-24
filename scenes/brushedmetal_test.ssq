@@ -1,0 +1,60 @@
+; brushedmetal_test.ssq — Ward 異方性のヘアライン金属 (BMRT brushedmetal.sl 移植)
+;
+; 原典は illuminance で光源を回して Ward BRDF を積分する。sqm の DSL には光源反復が
+; 無かったので、**反復だけ**を開くフック (lightcount / lightsel) を足し、
+; BRDF は .lisp 側に置いた (docs/2026-08-09_brushedmetal_Ward異方性.md)。
+;
+; 見どころ: ハイライトが**ブラシ目と直交する向きに伸びる** (毛髪のツヤと同じ)。
+;   brush-dir (1 0 0) の板 → ハイライトは**垂直**に伸びる
+;   brush-dir (0 1 0) の板 → 同じ光源・同じ粗さでも**水平**に伸びる
+;   球 brush-dir (0 1 0)   → 経線に直交する異方性リング
+;
+; ⚠ **画面の左右は world の x と逆**。このカメラ (0,1.9,-5.2)→(0,1.05,0) では
+;   right_vec = look×up = -x なので、**world x=-1.15 の板が画面右**に写る。
+;   絵で向きを確かめるときは必ずこの符号を先に確認すること。
+;
+; ※ SDF/blob は dPdu が「法線から作った任意基底」なので向きが保証されない。
+;   **brush-dir を明示すること** (省略すると模様の向きがオブジェクトごとに暴れる)。
+;   UV を持つメッシュなら brush-dir を 0 のままにすれば原典どおり dPdu を使う。
+;
+; プレビュー:
+;   ./sqm -i ../scenes/brushedmetal_test.ssq -o /tmp/bm.png -x 480 -y 360 -A 1 -s 1
+; 仕上げ:
+;   ./sqm -i ../scenes/brushedmetal_test.ssq -o /tmp/bm_hq.png -x 1000 -y 750 -A 2 -s 4
+
+(scene
+  (background 0.05 0.055 0.07)
+  (camera (from 0 1.9 -5.2) (at 0 1.05 0) (up 0 1 0) (fov 42))
+
+  (light (pos -2.8 4.2 -3.4) (intensity 1.10) (color 1.00 0.96 0.90) (radius 0.4))
+  (light (pos  3.2 2.6 -2.4) (intensity 0.55) (color 0.70 0.80 1.00) (radius 0.6))
+
+  ; ── ブラシ目 x の板 (world x=-1.15 = 画面右) ────────────────
+  (object "plate H"
+    (surface (color 0.86 0.87 0.90) (ka 0.22) (kd 0.10) (ks 0.90) (phong 0)
+             (shader brushedmetal)
+             (param uroughness 0.06) (param vroughness 0.45)
+             (param brush-dir 1 0 0))
+    (sdf (round (r 0.05) (box (center -1.15 1.15 0.35) (size 0.85 0.95 0.06)))))
+
+  ; ── ブラシ目 y の板 (粗さは同じ・向きだけ違う。画面左) ───────
+  (object "plate V"
+    (surface (color 0.86 0.87 0.90) (ka 0.22) (kd 0.10) (ks 0.90) (phong 0)
+             (shader brushedmetal)
+             (param uroughness 0.06) (param vroughness 0.45)
+             (param brush-dir 0 1 0))
+    (sdf (round (r 0.05) (box (center 1.15 1.15 0.35) (size 0.85 0.95 0.06)))))
+
+  ; ── 縦目の球 (曲面での異方性リング) ──────────────────────────
+  (object "ball"
+    (surface (color 0.82 0.80 0.76) (ka 0.20) (kd 0.12) (ks 0.85) (phong 0)
+             (shader brushedmetal)
+             (param uroughness 0.05) (param vroughness 0.40)
+             (param brush-dir 0 1 0))
+    (sdf (sphere (center 0 0.62 -0.85) (radius 0.62))))
+
+  (object "floor"
+    (surface (color 0.26 0.27 0.30) (ka 0.16) (kd 0.80) (ks 0.05) (phong 12)
+             (shader plastic))
+    (sdf (box (center 0 -0.05 0) (size 4.0 0.05 3.0))))
+)
