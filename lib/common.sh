@@ -26,22 +26,46 @@ WS="$(sqm_workspace)"
 SQM_REPO="$WS/sqm"
 DRSBCL_REPO="$WS/dr_sbcl"
 VCLAY_REPO="$WS/vclay"
-SHADER_CORE="$DRSBCL_REPO/lib/shader.core"
+
+# 実行ファイルの探索順 (common.ps1 の Get-SqmEnv と同じ規約):
+#   ① ソースからビルドした sqm/dist (開発機。常に最新なので優先)
+#   ② sqmexec 同梱の bin/<platform> (配布先。ソースを持たない環境)
+# ⚠ shader.core は sqm と**同じ出所の組**で使う。混ぜると ABI が食い違って
+#   落ちうるので、①②のどちらかに揃える (混成にしない)。
+case "$(uname -s)/$(uname -m)" in
+  Darwin/arm64) SQM_PLATFORM=darwin-arm64 ;;
+  Darwin/*)     SQM_PLATFORM=darwin-x64 ;;
+  Linux/aarch64) SQM_PLATFORM=linux-arm64 ;;
+  *)            SQM_PLATFORM=linux-x64 ;;
+esac
+BUNDLE_DIR="$SQMEXEC_DIR/bin/$SQM_PLATFORM"
+
 # 実行ファイル名は sqm から変えないこと (改名すると DR が落ちる/segfault)
-SQM_BIN_PATH="$SQM_REPO/dist/sqm"
-[ -f "$SQM_BIN_PATH" ] || [ ! -f "$SQM_BIN_PATH.exe" ] || SQM_BIN_PATH="$SQM_BIN_PATH.exe"
+if [ -f "$SQM_REPO/dist/sqm" ]; then
+  SQM_BIN_PATH="$SQM_REPO/dist/sqm"
+  SHADER_CORE="$DRSBCL_REPO/lib/shader.core"
+  SQM_BINARY_SOURCE=built
+else
+  SQM_BIN_PATH="$BUNDLE_DIR/sqm"
+  SHADER_CORE="$BUNDLE_DIR/shader.core"
+  SQM_BINARY_SOURCE=bundled
+fi
 
 # sqm 実行に必要な環境変数をこのシェルに設定する
 sqm_setup_env() {
   # ① 既定パスが macOS 固定なので必ず渡す。未設定だと .lisp 材質が
   #    エラーも出さずネイティブ材質へ落ちる
   [ -f "$SHADER_CORE" ] && export SQM_SHADER_CORE="$SHADER_CORE"
-  # ② シーン内の $SQM_ROOT/... を解決する根 (Mac⇄Win でパスを焼き込まない)
-  export SQM_ROOT="$SQM_REPO"
+  # ② シーン内の $SQM_ROOT/... を解決する根 (Mac⇄Win でパスを焼き込まない)。
+  #    配布先には sqm リポジトリが無いので、その場合は sqmexec 自身を根にする
+  #    (同梱の scenes/ と assets/ がこの下にある)
+  if [ -d "$SQM_REPO" ]; then export SQM_ROOT="$SQM_REPO"
+  else                        export SQM_ROOT="$SQMEXEC_DIR"; fi
   # ③ 接地影の光漏れ (白い三日月)。既定 0.05 は漏れる側
   : "${SQM_SHADOW_SEPS:=0.002}"; export SQM_SHADOW_SEPS
-  # ④ Homebrew libomp (Apple Silicon)
-  if [ -d /opt/homebrew/opt/libomp/lib ]; then
+  # ④ Homebrew libomp (Apple Silicon)。同梱バイナリは静的リンク済みで不要だが、
+  #    ソースからのビルドは動的リンクなので残す
+  if [ "$SQM_BINARY_SOURCE" = built ] && [ -d /opt/homebrew/opt/libomp/lib ]; then
     export DYLD_LIBRARY_PATH="/opt/homebrew/opt/libomp/lib:${DYLD_LIBRARY_PATH:-}"
   fi
 }

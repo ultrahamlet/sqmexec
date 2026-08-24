@@ -8,8 +8,17 @@
 含みませんが、**実行バイナリは同梱してあります** — クローンすれば、
 コンパイラもソースも無しにレンダーできます。
 
-- `bin/windows-x64/sqm.exe` — レンダラー本体
-- `bin/windows-x64/shader.core` — シェーダーライブラリ (材質・ライト・変位・ボリューム・後処理)
+- `bin/windows-x64/sqm.exe` — レンダラー本体 (Windows)
+- `bin/darwin-arm64/sqm` — レンダラー本体 (macOS / Apple Silicon)
+- `bin/<platform>/shader.core` — シェーダーライブラリ (材質・ライト・変位・ボリューム・後処理)
+
+> **macOS の初回だけ**: ダウンロードした配布物には検疫属性が付くので、
+> 一度だけ外してください (署名は ad-hoc のため)。
+> ```bash
+> xattr -dr com.apple.quarantine bin/darwin-arm64
+> ```
+> Apple Silicon 専用です (Intel Mac では動きません)。依存は静的リンク
+> 済みなので Homebrew の準備は要りません。
 - `app/sdfmodeler/` — ブラウザの階層 SDF/blob エディタ一式
 - `doctor` / `render` / `serve` / `build` — 環境を組み立てるラッパ (.ps1 / .sh)
 - `scenes/` — 動作確認用のサンプルシーン

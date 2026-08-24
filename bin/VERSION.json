@@ -1,25 +1,40 @@
-﻿{
-    "updated":  "2026-08-24",
-    "platforms":  {
-                      "windows-x64":  {
-                                          "sqm":  {
-                                                      "commit":  "1569694",
-                                                      "subject":  "docs: 引き継ぎ書 — sdfmodeler のコンパイル時間と SDF VM",
-                                                      "bytes":  4986076
-                                                  },
-                                          "shader_core":  {
-                                                              "commit":  "fcbffeb",
-                                                              "subject":  "shader: furvol — 体積シェル毛皮 (:volume)。Blender ヘア風のフワフワ",
-                                                              "bytes":  664205
-                                                          },
-                                          "built_with":  "MSYS2 UCRT64 GCC 16.2.0 (static link)",
-                                          "runtime_deps":  "Windows 10/11 のシステム DLL のみ (UCRT)。MSYS2 不要 — 実測確認済み"
-                                      }
-                  },
-    "app":  {
-                "sdfmodeler":  {
-                                   "commit":  "1569694",
-                                   "note":  "sqm/sdfmodeler の追跡ファイルの snapshot。原本は sqm 側"
-                               }
-            }
+{
+    "updated": "2026-08-24",
+    "platforms": {
+        "windows-x64": {
+            "sqm": {
+                "commit": "1569694",
+                "subject": "docs: 引き継ぎ書 — sdfmodeler のコンパイル時間と SDF VM",
+                "bytes": 4986076
+            },
+            "shader_core": {
+                "commit": "fcbffeb",
+                "subject": "shader: furvol — 体積シェル毛皮 (:volume)。Blender ヘア風のフワフワ",
+                "bytes": 664205
+            },
+            "built_with": "MSYS2 UCRT64 GCC 16.2.0 (static link)",
+            "runtime_deps": "Windows 10/11 のシステム DLL のみ (UCRT)。MSYS2 不要 — 実測確認済み"
+        },
+        "darwin-arm64": {
+            "sqm": {
+                "commit": "02a2e5c",
+                "subject": "main: DR_SHADER_CORE を -D で上書き可能に (#ifndef ガード)",
+                "bytes": 1537168
+            },
+            "shader_core": {
+                "commit": "f44a275",
+                "subject": "rhinoskin: 犀の皮膚の変位シェーダー (皺帯3本 + 異方性肌理)",
+                "bytes": 379920
+            },
+            "built_with": "Apple clang (arm64) / libomp 静的リンク / -march=native なし / -DDR_SHADER_CORE=\"shader.core\"",
+            "runtime_deps": "macOS の システムライブラリのみ (Homebrew 不要 — 実測確認済み)。Apple Silicon 専用",
+            "note": "ad-hoc 署名。ダウンロード後に xattr -dr com.apple.quarantine が要る"
+        }
+    },
+    "app": {
+        "sdfmodeler": {
+            "commit": "1569694",
+            "note": "sqm/sdfmodeler の追跡ファイルの snapshot。原本は sqm 側"
+        }
+    }
 }
