@@ -29,6 +29,9 @@ cd sqmexec
 
 **これだけで動きます。** バイナリは同梱なので追加のダウンロードは要りません。
 
+Claude Code から使う手順 (テストレンダリング → エディタ起動まで) は
+**[INSTALL.md](INSTALL.md)** に 3 ステップでまとめてあります。
+
 ```powershell
 .\doctor.ps1                              # 診断 (同梱シーンで実地テストまで通す)
 .\render.ps1 .\scenes\bear_blob.ssq out.png
