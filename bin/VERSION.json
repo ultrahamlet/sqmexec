@@ -3,8 +3,8 @@
     "platforms":  {
                       "windows-x64":  {
                                           "sqm":  {
-                                                      "commit":  "dbddd9a",
-                                                      "subject":  "sdfmodeler: probe の2重展開を解消 — ピックを別プログラムへ (展開量 -20%)",
+                                                      "commit":  "1569694",
+                                                      "subject":  "docs: 引き継ぎ書 — sdfmodeler のコンパイル時間と SDF VM",
                                                       "bytes":  4986076
                                                   },
                                           "shader_core":  {
@@ -18,7 +18,7 @@
                   },
     "app":  {
                 "sdfmodeler":  {
-                                   "commit":  "dbddd9a",
+                                   "commit":  "1569694",
                                    "note":  "sqm/sdfmodeler の追跡ファイルの snapshot。原本は sqm 側"
                                }
             }

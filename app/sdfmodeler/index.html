@@ -86,6 +86,21 @@ label.chk { color: var(--dim); user-select: none; }
   position: absolute; left: 10px; bottom: 8px; color: #ffffff70; font-size: 11px;
   pointer-events: none; text-shadow: 0 1px 2px #000;
 }
+/* シェーダのコンパイル中バッジ。数秒〜十数秒かかる (ノード数×距離関数の
+   インライン展開) ので、出さないと「固まった」と誤解される。ステータス行は
+   メッシュ再生成などに上書きされるため、ビューポート上に独立して出す。 */
+#compiling {
+  /* 上寄せ中央 — メッシュ表示中もコンパイルは走るので、モデルの真上を塞がない位置に */
+  position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
+  z-index: 3; pointer-events: none;
+  background: #000000c0; color: #ffd79a; border: 1px solid #ffd79a55;
+  border-radius: 6px; padding: 10px 16px; font-size: 13px; line-height: 1.5;
+  text-align: center; white-space: pre-line; box-shadow: 0 4px 16px #0008;
+}
+#compiling[hidden] { display: none; }
+#compiling .sub { color: #ffffff80; font-size: 11px; }
+#compiling .dots::after { content: '…'; animation: cblink 1.1s ease-in-out infinite; }
+@keyframes cblink { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
 #viewopts {
   position: absolute; top: 8px; right: 10px; z-index: 2;
   display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end;
@@ -189,7 +204,8 @@ label.chk { color: var(--dim); user-select: none; }
         <option value="0.75" selected>標準</option>
         <option value="0.5">高速</option>
       </select>
-      <label class="chk"><input type="checkbox" id="chkShadow"> 影</label>
+      <label class="chk" title="影。ON にするとシェーダを作り直すので初回だけ待ちが入る"><input type="checkbox" id="chkShadow"> 影</label>
+      <label class="chk" title="環境遮蔽 (接地部や付け根の陰り)。既定 OFF = 起動が速い。ON にするとシェーダを作り直すので初回だけ待ちが入る"><input type="checkbox" id="chkAO"> AO</label>
       <label class="chk"><input type="checkbox" id="chkGrid" checked> 床</label>
       <label class="chk"><input type="checkbox" id="chkAxis" checked> 軸</label>
       <label class="chk" title="選択パーツにギズモを表示 (移動: 矢印=軸/四角=平面/中央円=ビュー平面, Shift=0.1スナップ。回転: リング=ワールド軸回転, Shift=15°スナップ。キー W=移動 E=回転)"><input type="checkbox" id="chkGizmo" checked> ギズモ</label>
@@ -225,6 +241,7 @@ label.chk { color: var(--dim); user-select: none; }
       <div class="qa-btns"></div>
       <div class="qa-note">パーツ同士は滑らかに融合します (滑らか和 k はツリーのルートで調整)</div>
     </div>
+    <div id="compiling" hidden></div>
     <div id="hint"><b>v2026-07-12</b> | ドラッグ: 視点回転 / Shift+ドラッグ: パン / ホイール: ズーム / クリック: パーツ選択 / ギズモ: W=移動 E=回転 R=スケール (Shift: スナップ, 回転モードの中央ドット=pivot移動, sweepの緑ドット=経路点を個別移動) / 矢印キー: 移動</div>
   </div>
   <div id="sp2" class="splitter" title="ドラッグで幅を変更"></div>

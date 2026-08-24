@@ -1425,9 +1425,17 @@ float sInterCham(float a, float b, float k){
   return max(max(a,b), (a + k + b) * 0.70710678);
 }
 float sSub(float da, float db, float k){
-  k = max(k, 1e-6);
-  float h = clamp(0.5 - 0.5*(da+db)/k, 0.0, 1.0);
-  return mix(da, -db, h) + k*h*(1.0-h);
+  /* ⚠ 旧実装は mix(da, -db, h) で、sUnion と同じ fp32 の桁落ちを持っていた。
+     踏むのは **da が -1e9 のとき** — invert は子の距離を符号反転するので
+     (smooth-subtract (invert <非表示/blob/mesh の部分木>) X) で発生する
+     (h が 1 に飽和し da + (-db - da) が 1e9 付近の刻み 64 で潰れる:
+      実測 X=50 → -64 / X<32 → 0)。
+     sSub(da,db,k) = -sUnion(-da, db, k) は**恒等**なので (検算は下記)、
+     桁落ちしない sUnion に委ねる。通常域の一致は乱数3万点で最大差 9.54e-7。
+       h' = 1-h とおくと
+       -sUnion(-da,db,k) = -db + (da+db)h' + k h'(1-h')
+       sSub 旧式      = mix(da,-db,h) + k h(1-h) = -db + (da+db)h' + k h'(1-h')  ✓ */
+  return -sUnion(-da, db, k);
 }
 `;
 
