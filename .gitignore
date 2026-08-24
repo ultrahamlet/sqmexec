@@ -13,13 +13,16 @@
 *.hpp
 *.lisp
 
-# --- 実行バイナリ: git 履歴に積まず Releases に置く ---
-#     publish.ps1 は bin/ に配置するが commit はしない。取得手順は README「導入」。
+# --- 実行バイナリ: bin/ 配下だけ追跡する ---
+#     このリポジトリは「clone すれば動く」ことが目的なので、配布バイナリは git に載せる。
+#     ただし他所から紛れ込んだ exe を拾わないよう、bin/ の外では弾く。
+#     更新は publish.ps1 で (手でコピーしない)。
 *.exe
 *.dll
 *.dylib
 *.so
 shader.core
+!bin/**
 
 # --- 他リポジトリを間違ってここに clone/コピーした場合の保険 ---
 #     トップ階層だけを指す (app/sdfmodeler/tools/ は配布対象なので巻き添えにしない)

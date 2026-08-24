@@ -112,13 +112,10 @@ mac/Linux は同名の `.sh` (`./doctor.sh` など)。引数は同じ並び。
 
 ### (A) 実行するだけ (配布先。ソース不要)
 
-**バイナリは git に入っていない。Releases から取る。**
-`sqm.exe` と `shader.core` を
-[Releases](https://github.com/ultrahamlet/sqmexec/releases) から落として
-`bin/windows-x64/` に置く。ここが空のまま doctor を走らせると
-「バイナリが無い」で止まるので、**まずそこを疑うこと**。
-(git 履歴に数 MB を積み上げないための配布モデル。公開リポジトリなので
- 一度入れると消しにくい ― publish.ps1 は bin/ に置くが commit はしない)
+**sqmexec をクローンするだけで動く。** バイナリは `bin/windows-x64/` に同梱。
+追加のダウンロードは要らない (Releases 方式は採らなかった — 公開の手間が
+毎回かかるため。代わりに数 MB が履歴に積み上がるので、更新は publish.ps1
+を通して必要なときだけにすること)。
 
 sqm.exe は静的リンクで、**Windows 標準の UCRT だけで動く** —
 MSYS2 もコンパイラも要らない (MSYS2 を含まない最小 PATH で実測確認済み)。

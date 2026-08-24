@@ -5,11 +5,11 @@
 シェーダー言語で設計できることを特徴にしています。
 
 このリポジトリは **sqm を動かすための実行環境**です。レンダラー本体のソースは
-含みません。入っているのは実行スクリプト・ブラウザエディタ・サンプル・手順で、
-**実行バイナリは [Releases](https://github.com/ultrahamlet/sqmexec/releases)** に置いています。
+含みませんが、**実行バイナリは同梱してあります** — クローンすれば、
+コンパイラもソースも無しにレンダーできます。
 
-- `sqm.exe` — レンダラー本体 (Releases)
-- `shader.core` — シェーダーライブラリ (材質・ライト・変位・ボリューム・後処理。Releases)
+- `bin/windows-x64/sqm.exe` — レンダラー本体
+- `bin/windows-x64/shader.core` — シェーダーライブラリ (材質・ライト・変位・ボリューム・後処理)
 - `app/sdfmodeler/` — ブラウザの階層 SDF/blob エディタ一式
 - `doctor` / `render` / `serve` / `build` — 環境を組み立てるラッパ (.ps1 / .sh)
 - `scenes/` — 動作確認用のサンプルシーン
@@ -27,8 +27,7 @@ git clone https://github.com/ultrahamlet/sqmexec.git
 cd sqmexec
 ```
 
-[Releases](https://github.com/ultrahamlet/sqmexec/releases) から `sqm.exe` と
-`shader.core` をダウンロードし、`bin\windows-x64\` に置きます。あとは:
+**これだけで動きます。** バイナリは同梱なので追加のダウンロードは要りません。
 
 ```powershell
 .\doctor.ps1                              # 診断 (同梱シーンで実地テストまで通す)
@@ -116,7 +115,7 @@ $env:SQM_SHADER_CORE = "C:\path\to\shader.core"
 
 | パス | 中身 |
 |---|---|
-| `bin/<platform>/` | `sqm.exe` + `shader.core` を置く場所 (中身は Releases から) |
+| `bin/<platform>/` | `sqm.exe` + `shader.core` (実行に要るのはこの2つだけ) |
 | `bin/VERSION.json` | どのコミットから焼いたバイナリかの記録 |
 | `app/sdfmodeler/` | ブラウザの階層 SDF/blob エディタ一式 (html/js/wasm/serve.py) |
 | `scenes/` | サンプルシーンと自己診断用の最小シーン |
