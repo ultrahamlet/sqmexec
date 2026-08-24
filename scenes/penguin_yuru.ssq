@@ -1,0 +1,59 @@
+; penguin_yuru.ssq — ペンギンのゆるキャラ "ぺんもち"
+;   ゆるキャラの定石: 頭は体と同じくらい大きく / 目は低く広めに / 手足は短く丸く
+;   推奨: SQM_GI_KD=1 sqm -i penguin_yuru.ssq -o out.png -x 720 -y 840 -A 3 -s 4 -g 32 -D 2 -T aces
+(scene
+  (background 0.72 0.85 0.94)
+  (camera (from 0.55 1.72 -4.5) (at 0 1.15 0) (up 0 1 0) (fov 38))
+  (light (pos -3.2 4.2 -3.8)(intensity 1.62)(color 1.0 0.96 0.90)(radius 0.9))
+  (light (pos 3.6 2.0 -3.0)(intensity 0.55)(color 0.75 0.84 1.0)(radius 0.8))
+  (light (pos 0 3.4 3.0)(intensity 0.70)(color 1.0 0.98 0.95)(radius 0.8))
+
+  (object "floor"
+    (surface (color 0.90 0.86 0.79)(ka 0.34)(kd 0.82)(ks 0.10)(phong 0)(roi 1.0)(shader pbrsurface)(param Ka 0.34)(param Kd 0.88)(param Ks 0.12)(param roughness 0.55)(param metallic 0.0)(param Kr 0.06))
+    (sdf (plane (center 0 0 0))))
+  (object "backdrop"
+    (surface (color 0.70 0.84 0.95)(ka 0.38)(kd 0.86)(ks 0.05)(phong 0)(roi 1.0)(shader pbrsurface)(param Ka 0.38)(param Kd 0.90)(param Ks 0.06)(param roughness 0.85)(param metallic 0.0)(param Kr 0.0))
+    (sdf (box (center 0 3.0 2.6) (size 7.0 3.2 0.10))))
+
+  ; --- 体 + 頭 + フリッパー + 尾 + アホ毛 (フェルト地) ---
+  (object "peng-body"
+    (surface (color 0.12 0.15 0.22)(ka 0.28)(kd 0.58)(ks 0.10)(phong 0)(roi 1.0)(shader velvet)(param sheen-color 0.42 0.53 0.72)(param edge-power 2.2)(param sheen 1.7)(param backscatter 0.22)(param nap 0.5)(param nap-scale 34)(param body-dark 0.42)(param sheen-lit 0.6)(param roughness 0.35))
+    (displace (amp 0.008) (freq 34) (octaves 3) (mode turbulence))
+    (sdf (smooth-union (k 0.13)
+           (ellipsoid (center 0 0.76 0) (radii 0.72 0.78 0.66))
+           (smooth-union (k 0.13)
+             (ellipsoid (center 0 1.66 0) (radii 0.66 0.62 0.62))
+             (smooth-union (k 0.14)
+               (mirror (normal -1 0 0) (ellipsoid (center 0.80 0.78 -0.02) (radii 0.14 0.40 0.28)))
+               (smooth-union (k 0.14)
+                 (ellipsoid (center 0 0.30 0.56) (radii 0.30 0.17 0.28))
+                 (capsule (a 0 2.16 0.05) (b 0.09 2.33 0.11) (radius 0.070))))))))
+
+  ; --- お腹と顔の白 (体より少し前に出して被せる) ---
+  (object "peng-white"
+    (surface (color 0.95 0.94 0.90)(ka 0.32)(kd 0.62)(ks 0.10)(phong 0)(roi 1.0)(shader velvet)(param sheen-color 1.0 0.99 0.96)(param edge-power 2.2)(param sheen 1.4)(param backscatter 0.25)(param nap 0.5)(param nap-scale 34)(param body-dark 0.28)(param sheen-lit 0.6)(param roughness 0.35))
+    (displace (amp 0.008) (freq 34) (octaves 3) (mode turbulence))
+    (sdf (smooth-union (k 0.10)
+           (ellipsoid (center 0 0.84 -0.28) (radii 0.46 0.56 0.46))
+           (ellipsoid (center 0 1.62 -0.30) (radii 0.42 0.40 0.40)))))
+
+  ; --- ほっぺ ---
+  (object "peng-blush"
+    (surface (color 0.96 0.64 0.62)(ka 0.36)(kd 0.62)(ks 0.05)(phong 0)(roi 1.0)(shader velvet)(param sheen-color 1.0 0.80 0.78)(param edge-power 2.4)(param sheen 1.2)(param backscatter 0.30)(param nap 0.5)(param nap-scale 34)(param body-dark 0.20)(param sheen-lit 0.6)(param roughness 0.40))
+    (sdf (mirror (normal -1 0 0) (ellipsoid (center 0.29 1.47 -0.545) (radii 0.115 0.075 0.07)))))
+
+  ; --- くちばしと足 ---
+  (object "peng-orange"
+    (surface (color 1.0 0.66 0.18)(ka 0.30)(kd 0.82)(ks 0.04)(phong 0)(roi 1.0)(shader pbrsurface)(param Ka 0.32)(param Kd 0.88)(param Ks 0.30)(param roughness 0.35)(param metallic 0.0)(param Kr 0.0))
+    (sdf (union
+           (round-cone-ab (a 0 1.56 -0.60) (b 0 1.49 -0.95) (r1 0.15) (r2 0.05))
+           (mirror (normal -1 0 0) (ellipsoid (center 0.29 0.08 -0.42) (radii 0.24 0.085 0.34))))))
+
+  ; --- 目 (反射を抑えてビーズ状に) ---
+  (object "peng-eyes"
+    (surface (color 0.02 0.02 0.03)(ka 0.05)(kd 0.40)(ks 0.05)(phong 0)(roi 1.0)(shader pbrsurface)(param Ka 0.05)(param Kd 0.40)(param Ks 0.75)(param roughness 0.12)(param metallic 0.0)(param Kr 0.0))
+    (sdf (mirror (normal -1 0 0) (sphere (center 0.27 1.74 -0.60) (radius 0.135)))))
+  (object "peng-catchlight"
+    (surface (color 1.0 1.0 1.0)(ka 0.95)(kd 0.4)(ks 0.0)(phong 0)(roi 1.0)(shader pbrsurface)(param Ka 1.0)(param Kd 0.4)(param Ks 0.05)(param roughness 0.6)(param metallic 0.0)(param Kr 0.0))
+    (sdf (mirror (normal -1 0 0) (sphere (center 0.312 1.812 -0.712) (radius 0.031)))))
+)

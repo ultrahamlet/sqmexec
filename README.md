@@ -107,6 +107,7 @@ $env:SQM_SHADER_CORE = "C:\path\to\shader.core"
 | `ceramictiles_test.ssq` | 浴室タイル (シェーダーによる手続き的な材質) |
 | `brushedmetal_test.ssq` | ヘアライン金属 (Ward 異方性反射) |
 | `caustic_test.ssq` | コースティクス。`-K` を付けて焼きます |
+| `penguin_yuru.ssq` | ペンギンのゆるキャラ。velvet + displace のフェルト地、色は薄い被せで塗り分け |
 | `smoke.ssq` | 自己診断用の最小シーン (`doctor` が使う) |
 
 ```powershell
