@@ -1,0 +1,47 @@
+; ceramictiles_test.ssq — 浴室のセラミックタイル (BMRT ceramictiles.sl 移植)
+;
+; 見どころ:
+;   ・壁 (青系): 斑 (mottling)・縁の色 (edgevary, ragged)・斑点 (speckly)・
+;     タイル毎の色相/彩度/明度ばらつき (varyEach) が全部乗り。目地はモルタル+高周波fBm。
+;     相棒 ceramictilesdisp で目地が実際に凹む (spacing/axis を一致させる)。
+;   ・床 (白系): (shader-space (rotate 0 45 0)) で**タイルだけ斜め45°** —
+;     shader 空間の実戦例。※shader-space を使う面では変位の相棒は使わない
+;     (shader-space は :surface 専用なので色と溝がズレる)。
+;   ・ハイライトは ceramic と同じ LocIllumGlossy (閾値化) + Schlick フレネル反射。
+;
+; プレビュー:
+;   ./sqm -i ../scenes/ceramictiles_test.ssq -o /tmp/ct.png -x 600 -y 400 -A 2 -s 2
+
+(scene
+  (background 0.05 0.055 0.07)
+  (camera (from 2.3 1.7 -3.6) (at -0.3 1.0 0.8) (up 0 1 0) (fov 44))
+
+  (light (pos -2.6 4.0 -3.6) (intensity 1.10) (color 1.00 0.97 0.92) (radius 0.4))
+  (light (pos  3.0 2.0 -2.6) (intensity 0.30) (color 0.68 0.78 1.00) (radius 0.8))
+
+  ; ── 壁: 青タイル + 目地の実変位 ──────────────────────────────
+  (object "tile wall"
+    (surface (color 1 1 1) (ka 0.16) (kd 0.5) (ks 0.75) (phong 0)
+             (shader ceramictiles)
+             (param stilespacing 0.6) (param ttilespacing 0.6)
+             (param axis 2)
+             (param roughness 0.1) (param specsharpness 0.5)
+             (param Kr 0.6))
+    (displace (amp 0.015) (mode dsl) (shader ceramictilesdisp) (lipschitz 50)
+              (param stilespacing 0.6) (param ttilespacing 0.6) (param axis 2))
+    (sdf (box (center 0 1.3 1.6) (size 2.4 1.3 0.07))))
+
+  ; ── 床: 白タイルを shader-space で 45° 回す (変位なし) ──────────
+  (object "tile floor"
+    (surface (color 1 1 1) (ka 0.16) (kd 0.6) (ks 0.55) (phong 0)
+             (shader ceramictiles)
+             (param stilespacing 0.5) (param ttilespacing 0.5)
+             (param axis 1)
+             (param Cbase 0.82 0.80 0.74) (param Cmottle 0.68 0.66 0.62)
+             (param Cedge 0.55 0.53 0.48) (param Cspeck 0.10 0.09 0.08)
+             (param mortar-color 0.35 0.34 0.32)
+             (param mottlefreq 5) (param varyhue 0.01) (param varysat 0.2)
+             (param varylum 0.25) (param Kr 0.35)
+             (shader-space (rotate 0 45 0)))
+    (sdf (box (center 0 -0.04 0.4) (size 2.6 0.04 2.2))))
+)
