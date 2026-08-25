@@ -3,9 +3,9 @@
     "platforms": {
         "windows-x64": {
             "sqm": {
-                "commit": "ab51cc0",
-                "subject": "sdfmodeler: 赤いカエルのサンプルを原本側へ",
-                "bytes": 4988164
+                "commit": "a94f969",
+                "subject": "shade_dr: 影の可視度をメモ化 — 同じ点・同じ光源へのレイの二重撃ちをやめる",
+                "bytes": 4989433
             },
             "shader_core": {
                 "commit": "e2a795f",
@@ -33,7 +33,7 @@
     },
     "app": {
         "sdfmodeler": {
-            "commit": "ab51cc0",
+            "commit": "a94f969",
             "note": "sqm/sdfmodeler の追跡ファイルの snapshot。原本は sqm 側"
         }
     }

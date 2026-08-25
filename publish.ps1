@@ -34,7 +34,15 @@ function Format-JsonPlain([string]$compact) {
             default { if ($ch -notmatch '\s') { [void]$sb.Append($ch) } }
         }
     }
-    $sb.ToString()
+    # ⚠ PS 5.1 の ConvertTo-Json は ' < > & を \uXXXX に退避する。他マシンが
+    #   書いた欄をそのまま持ち越すだけでも化けるので (darwin の subject の ' が
+    #   \u0027 になった)、ASCII に戻す。JSON としては等価。
+    $out = $sb.ToString()
+    foreach ($pair in @(@('\u0027',"'"), @('\u003c','<'),
+                        @('\u003e','>'), @('\u0026','&'))) {
+        $out = $out.Replace($pair[0], $pair[1])
+    }
+    $out
 }
 . "$PSScriptRoot\lib\common.ps1"
 
