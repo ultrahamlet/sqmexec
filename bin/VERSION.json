@@ -3,14 +3,14 @@
     "platforms": {
         "windows-x64": {
             "sqm": {
-                "commit": "1569694",
-                "subject": "docs: 引き継ぎ書 — sdfmodeler のコンパイル時間と SDF VM",
-                "bytes": 4986076
+                "commit": "ab51cc0",
+                "subject": "sdfmodeler: 赤いカエルのサンプルを原本側へ",
+                "bytes": 4988164
             },
             "shader_core": {
-                "commit": "fcbffeb",
-                "subject": "shader: furvol — 体積シェル毛皮 (:volume)。Blender ヘア風のフワフワ",
-                "bytes": 664205
+                "commit": "e2a795f",
+                "subject": "Merge windows/native-2026-08-11 — octaenv / bsdfkarakusa を取り込む",
+                "bytes": 680777
             },
             "built_with": "MSYS2 UCRT64 GCC 16.2.0 (static link)",
             "runtime_deps": "Windows 10/11 のシステム DLL のみ (UCRT)。MSYS2 不要 — 実測確認済み"
@@ -33,7 +33,7 @@
     },
     "app": {
         "sdfmodeler": {
-            "commit": "6ba563b",
+            "commit": "ab51cc0",
             "note": "sqm/sdfmodeler の追跡ファイルの snapshot。原本は sqm 側"
         }
     }
