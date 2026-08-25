@@ -1,0 +1,76 @@
+; octopus_yuru.ssq — タコのゆるキャラ "たこまる"
+;   丸い頭に 8 本足。足は放射状に伸ばし、正面の1本だけ吸盤を見せる
+;   ⚠ surface の ks は鏡面反射係数 (-D で反射レイが飛ぶ)。濡れた艶は 0.05 まで。
+;     ハイライトは param Ks 側で作る
+;   推奨: SQM_GI_KD=1 sqm -i octopus_yuru.ssq -o out.png -x 800 -y 740 -A 3 -s 4 -g 32 -D 2 -T aces
+(scene
+  (background 0.80 0.86 0.92)
+  (camera (from 0.50 1.60 -4.1) (at 0 0.92 0) (up 0 1 0) (fov 38))
+  (light (pos -3.2 4.2 -3.8)(intensity 1.62)(color 1.0 0.96 0.90)(radius 0.9))
+  (light (pos 3.6 2.0 -3.0)(intensity 0.55)(color 0.75 0.84 1.0)(radius 0.8))
+  (light (pos 0 3.4 3.0)(intensity 0.70)(color 1.0 0.98 0.95)(radius 0.8))
+
+  (object "floor"
+    (surface (color 0.88 0.86 0.82)(ka 0.34)(kd 0.82)(ks 0.10)(phong 0)(roi 1.0)(shader pbrsurface)(param Ka 0.34)(param Kd 0.88)(param Ks 0.12)(param roughness 0.55)(param metallic 0.0)(param Kr 0.0))
+    (sdf (plane (center 0 0 0))))
+  (object "backdrop"
+    (surface (color 0.84 0.89 0.93)(ka 0.38)(kd 0.86)(ks 0.0)(phong 0)(roi 1.0)(shader pbrsurface)(param Ka 0.38)(param Kd 0.90)(param Ks 0.06)(param roughness 0.85)(param metallic 0.0)(param Kr 0.0))
+    (sdf (box (center 0 3.0 2.6) (size 7.0 3.2 0.10))))
+
+  ; --- 頭 + 8本足 (放射状に 45 度ずつ) ---
+  (object "octo-body"
+    (surface (color 1.0 0.40 0.35)(ka 0.36)(kd 0.86)(ks 0.05)(phong 0)(roi 1.0)(shader pbrsurface)(param Ka 0.36)(param Kd 0.88)(param Ks 0.70)(param roughness 0.28)(param metallic 0.0)(param Kr 0.0))
+    (sdf (smooth-union (k 0.14)
+           (ellipsoid (center 0 1.02 0) (radii 0.80 0.86 0.78))
+           (smooth-union (k 0.12)
+             (round-cone-ab (a 0.34 0.52 0) (b 0.98 0.13 0) (r1 0.22) (r2 0.075))
+             (smooth-union (k 0.12)
+               (round-cone-ab (a 0.2404 0.52 0.2404) (b 0.6930 0.13 0.6930) (r1 0.22) (r2 0.075))
+               (smooth-union (k 0.12)
+                 (round-cone-ab (a 0 0.52 0.34) (b 0 0.13 0.98) (r1 0.22) (r2 0.075))
+                 (smooth-union (k 0.12)
+                   (round-cone-ab (a -0.2404 0.52 0.2404) (b -0.6930 0.13 0.6930) (r1 0.22) (r2 0.075))
+                   (smooth-union (k 0.12)
+                     (round-cone-ab (a -0.34 0.52 0) (b -0.98 0.13 0) (r1 0.22) (r2 0.075))
+                     (smooth-union (k 0.12)
+                       (round-cone-ab (a -0.2404 0.52 -0.2404) (b -0.6930 0.13 -0.6930) (r1 0.22) (r2 0.075))
+                       (smooth-union (k 0.12)
+                         (round-cone-ab (a 0 0.52 -0.34) (b 0 0.13 -0.98) (r1 0.22) (r2 0.075))
+                         (round-cone-ab (a 0.2404 0.52 -0.2404) (b 0.6930 0.13 -0.6930) (r1 0.22) (r2 0.075))))))))))))
+
+  ; --- 吸盤 (正面の足の上面に4つ) ---
+  (object "octo-suckers"
+    (surface (color 1.0 0.76 0.72)(ka 0.34)(kd 0.80)(ks 0.02)(phong 0)(roi 1.0)(shader pbrsurface)(param Ka 0.36)(param Kd 0.85)(param Ks 0.30)(param roughness 0.40)(param metallic 0.0)(param Kr 0.0))
+    (sdf (union
+           (ellipsoid (center 0 0.500 -0.628) (radii 0.055 0.030 0.055))
+           (union
+             (ellipsoid (center 0 0.419 -0.724) (radii 0.050 0.028 0.050))
+             (union
+               (ellipsoid (center 0 0.339 -0.820) (radii 0.044 0.024 0.044))
+               (union
+                 (ellipsoid (center 0 0.269 -0.903) (radii 0.036 0.020 0.036))
+                 (mirror (normal -1 0 0)
+                   (union
+                     (ellipsoid (center 0.4667 0.4725 -0.4667) (radii 0.050 0.028 0.050))
+                     (union
+                       (ellipsoid (center 0.5572 0.3655 -0.5572) (radii 0.044 0.024 0.044))
+                       (ellipsoid (center 0.6296 0.2800 -0.6296) (radii 0.036 0.020 0.036)))))))))))
+
+  ; --- 目 ---
+  (object "octo-eyes"
+    (surface (color 0.02 0.02 0.03)(ka 0.05)(kd 0.40)(ks 0.05)(phong 0)(roi 1.0)(shader pbrsurface)(param Ka 0.05)(param Kd 0.40)(param Ks 0.75)(param roughness 0.12)(param metallic 0.0)(param Kr 0.0))
+    (sdf (mirror (normal -1 0 0) (sphere (center 0.30 1.22 -0.66) (radius 0.17)))))
+  (object "octo-catchlight"
+    (surface (color 1.0 1.0 1.0)(ka 0.95)(kd 0.4)(ks 0.0)(phong 0)(roi 1.0)(shader pbrsurface)(param Ka 1.0)(param Kd 0.4)(param Ks 0.05)(param roughness 0.6)(param metallic 0.0)(param Kr 0.0))
+    (sdf (mirror (normal -1 0 0) (sphere (center 0.351 1.305 -0.798) (radius 0.038)))))
+
+  ; --- 口 ---
+  (object "octo-mouth"
+    (surface (color 0.44 0.16 0.16)(ka 0.22)(kd 0.62)(ks 0.02)(phong 0)(roi 1.0)(shader pbrsurface)(param Ka 0.24)(param Kd 0.70)(param Ks 0.25)(param roughness 0.45)(param metallic 0.0)(param Kr 0.0))
+    (sdf (ellipsoid (center 0 0.88 -0.77) (radii 0.115 0.070 0.055))))
+
+  ; --- ほっぺ ---
+  (object "octo-blush"
+    (surface (color 1.0 0.62 0.58)(ka 0.38)(kd 0.62)(ks 0.0)(phong 0)(roi 1.0)(shader velvet)(param sheen-color 1.0 0.80 0.76)(param edge-power 2.4)(param sheen 1.2)(param backscatter 0.30)(param nap 0.5)(param nap-scale 32)(param body-dark 0.18)(param sheen-lit 0.6)(param roughness 0.40))
+    (sdf (mirror (normal -1 0 0) (ellipsoid (center 0.46 1.02 -0.61) (radii 0.15 0.10 0.09)))))
+)

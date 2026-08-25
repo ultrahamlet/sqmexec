@@ -1,0 +1,63 @@
+; gyoza_yuru.ssq — 餃子のゆるキャラ "ぎょうざくん"
+;   上辺のヒダを小さな楕円体7個で作り、焼き目は面に薄く被せた別オブジェクト
+;   推奨: SQM_GI_KD=1 sqm -i gyoza_yuru.ssq -o out.png -x 820 -y 680 -A 3 -s 4 -g 32 -D 2 -T aces
+(scene
+  (background 0.82 0.86 0.90)
+  (camera (from 0.40 1.05 -3.0) (at 0 0.60 0) (up 0 1 0) (fov 38))
+  (light (pos -3.2 4.2 -3.8)(intensity 1.62)(color 1.0 0.96 0.90)(radius 0.9))
+  (light (pos 3.6 2.0 -3.0)(intensity 0.40)(color 0.75 0.84 1.0)(radius 0.8))
+  (light (pos 0 3.4 3.0)(intensity 0.70)(color 1.0 0.98 0.95)(radius 0.8))
+
+  (object "floor"
+    (surface (color 0.88 0.85 0.80)(ka 0.34)(kd 0.82)(ks 0.10)(phong 0)(roi 1.0)(shader pbrsurface)(param Ka 0.34)(param Kd 0.88)(param Ks 0.12)(param roughness 0.55)(param metallic 0.0)(param Kr 0.0))
+    (sdf (plane (center 0 0 0))))
+  (object "backdrop"
+    (surface (color 0.86 0.90 0.92)(ka 0.38)(kd 0.86)(ks 0.0)(phong 0)(roi 1.0)(shader pbrsurface)(param Ka 0.38)(param Kd 0.90)(param Ks 0.06)(param roughness 0.85)(param metallic 0.0)(param Kr 0.0))
+    (sdf (box (center 0 3.0 2.2) (size 7.0 3.2 0.10))))
+
+  ; --- 皮 + ヒダ + 短い腕 ---
+  (object "gyoza-body"
+    (surface (color 1.0 0.90 0.68)(ka 0.34)(kd 0.84)(ks 0.03)(phong 0)(roi 1.0)(shader pbrsurface)(param Ka 0.36)(param Kd 0.88)(param Ks 0.30)(param roughness 0.42)(param metallic 0.0)(param Kr 0.0))
+    (displace (amp 0.0035) (freq 14) (octaves 3) (mode turbulence))
+    (sdf (smooth-union (k 0.10)
+           (ellipsoid (center 0 0.60 0) (radii 0.90 0.56 0.42))
+           (smooth-union (k 0.12)
+             (ellipsoid (center 0 1.15 0) (radii 0.13 0.09 0.19))
+             (smooth-union (k 0.12)
+               (mirror (normal -1 0 0) (ellipsoid (center 0.24 1.13 0) (radii 0.13 0.09 0.19)))
+               (smooth-union (k 0.12)
+                 (mirror (normal -1 0 0) (ellipsoid (center 0.48 1.07 0) (radii 0.13 0.09 0.19)))
+                 (smooth-union (k 0.12)
+                   (mirror (normal -1 0 0) (ellipsoid (center 0.72 0.94 0) (radii 0.13 0.085 0.18)))
+                   (mirror (normal -1 0 0) (round-cone-ab (a 0.80 0.55 0) (b 1.05 0.38 -0.05) (r1 0.13) (r2 0.10))))))))))
+
+  ; --- 焼き目 (面に薄く被せる) ---
+  (object "gyoza-sear"
+    (surface (color 0.70 0.40 0.14)(ka 0.28)(kd 0.80)(ks 0.04)(phong 0)(roi 1.0)(shader pbrsurface)(param Ka 0.30)(param Kd 0.85)(param Ks 0.35)(param roughness 0.36)(param metallic 0.0)(param Kr 0.0))
+    (sdf (intersect
+           (ellipsoid (center 0 0.60 0) (radii 0.920 0.580 0.440))
+           (box (center 0 0.18 0) (size 1.4 0.19 0.8)))))
+
+  ; --- 足 ---
+  (object "gyoza-feet"
+    (surface (color 0.97 0.88 0.66)(ka 0.34)(kd 0.84)(ks 0.03)(phong 0)(roi 1.0)(shader pbrsurface)(param Ka 0.36)(param Kd 0.88)(param Ks 0.28)(param roughness 0.44)(param metallic 0.0)(param Kr 0.0))
+    (sdf (mirror (normal -1 0 0) (ellipsoid (center 0.28 0.06 -0.34) (radii 0.20 0.06 0.26)))))
+
+  ; --- 目 ---
+  (object "gyoza-eyes"
+    (surface (color 0.02 0.02 0.03)(ka 0.05)(kd 0.40)(ks 0.05)(phong 0)(roi 1.0)(shader pbrsurface)(param Ka 0.05)(param Kd 0.40)(param Ks 0.75)(param roughness 0.12)(param metallic 0.0)(param Kr 0.0))
+    (sdf (mirror (normal -1 0 0) (sphere (center 0.28 0.72 -0.375) (radius 0.13)))))
+  (object "gyoza-catchlight"
+    (surface (color 1.0 1.0 1.0)(ka 0.95)(kd 0.4)(ks 0.0)(phong 0)(roi 1.0)(shader pbrsurface)(param Ka 1.0)(param Kd 0.4)(param Ks 0.05)(param roughness 0.6)(param metallic 0.0)(param Kr 0.0))
+    (sdf (mirror (normal -1 0 0) (sphere (center 0.319 0.785 -0.480) (radius 0.030)))))
+
+  ; --- 口 ---
+  (object "gyoza-mouth"
+    (surface (color 0.46 0.24 0.14)(ka 0.22)(kd 0.62)(ks 0.02)(phong 0)(roi 1.0)(shader pbrsurface)(param Ka 0.24)(param Kd 0.70)(param Ks 0.25)(param roughness 0.45)(param metallic 0.0)(param Kr 0.0))
+    (sdf (ellipsoid (center 0 0.48 -0.40) (radii 0.11 0.065 0.05))))
+
+  ; --- ほっぺ ---
+  (object "gyoza-blush"
+    (surface (color 1.0 0.68 0.58)(ka 0.38)(kd 0.62)(ks 0.0)(phong 0)(roi 1.0)(shader velvet)(param sheen-color 1.0 0.84 0.76)(param edge-power 2.4)(param sheen 1.2)(param backscatter 0.30)(param nap 0.5)(param nap-scale 32)(param body-dark 0.18)(param sheen-lit 0.6)(param roughness 0.40))
+    (sdf (mirror (normal -1 0 0) (ellipsoid (center 0.50 0.60 -0.32) (radii 0.13 0.09 0.07)))))
+)
