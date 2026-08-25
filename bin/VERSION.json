@@ -17,14 +17,14 @@
         },
         "darwin-arm64": {
             "sqm": {
-                "commit": "02a2e5c",
-                "subject": "main: DR_SHADER_CORE を -D で上書き可能に (#ifndef ガード)",
-                "bytes": 1537168
+                "commit": "78b1c15",
+                "subject": "Merge branch 'octaenv': 八面体マップシェーダー・getenv 性能修正・blob モーション生成器",
+                "bytes": 1528272
             },
             "shader_core": {
-                "commit": "f44a275",
-                "subject": "rhinoskin: 犀の皮膚の変位シェーダー (皺帯3本 + 異方性肌理)",
-                "bytes": 379920
+                "commit": "e2a795f",
+                "subject": "Merge windows/native-2026-08-11 — octaenv / bsdfkarakusa を取り込む",
+                "bytes": 364392
             },
             "built_with": "Apple clang (arm64) / libomp 静的リンク / -march=native なし / -DDR_SHADER_CORE=\"shader.core\"",
             "runtime_deps": "macOS の システムライブラリのみ (Homebrew 不要 — 実測確認済み)。Apple Silicon 専用",
