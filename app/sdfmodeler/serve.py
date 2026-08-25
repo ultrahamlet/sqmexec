@@ -397,6 +397,18 @@ class NoStoreHandler(SimpleHTTPRequestHandler):
 if __name__ == "__main__":
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 8642
     directory = sys.argv[2] if len(sys.argv) > 2 else os.getcwd()
+    # ⚠ SQM_ROOT を必ず撃つ (2026-08-25)。
+    #   シーン中の $SQM_ROOT は、環境変数が無いと「読み込み中の .ssq の親」へ
+    #   フォールバックする。ここは .ssq を **temp dir に書いて** sqm を呼ぶので、
+    #   撃たないと (mesh (file "$SQM_ROOT/assets/x.obj")) が temp dir 基準になり
+    #   メッシュだけ黙って落ちる。落ちた結果ジオメトリが空になると sqm は
+    #   "data format error" と出して **PNG を書かずに終了する** ので、
+    #   🎬 sqm ボタンが「何も表示されない」に見えていた。
+    #   /__render__ は dict(os.environ) を継承し、/__mesh__ (field2obj 経由) も
+    #   os.environ をそのまま使うので、ここ1箇所で両方に効く。
+    os.environ.setdefault(
+        "SQM_ROOT", os.path.abspath(os.path.join(os.path.abspath(directory), "..")))
     print(f"sdfmodeler: http://localhost:{port}  (Cache-Control: no-store, dir={directory})")
+    print(f"  SQM_ROOT={os.environ['SQM_ROOT']}")
     handler = functools.partial(NoStoreHandler, directory=directory)
     ThreadingHTTPServer(("", port), handler).serve_forever()

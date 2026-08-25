@@ -238,7 +238,8 @@ export function blobLine(props, pos = null, rotDeg = null) {
   return s + ')';
 }
 
-/* (mesh ..) の 1 行に焼く。extra (smooth/use-mtl/group-surface 等) はそのまま戻す */
+/* (mesh ..) の 1 行に焼く。smooth は props から (smooth 1) を起こし、
+ * その他の extra (use-mtl/group-surface 等) はそのまま戻す */
 export function meshLine(props, pos = null, rotDeg = null) {
   const p = props;
   const c = pos || p.center, r = rotDeg || p.rot;
@@ -246,6 +247,7 @@ export function meshLine(props, pos = null, rotDeg = null) {
   if (c.some(v => v)) s += ` (pos ${c.map(g9).join(' ')})`;
   if (p.scale.some(v => v !== 1)) s += ` (scale ${p.scale.map(g9).join(' ')})`;
   if (r.some(v => v)) s += ` (rot ${r.map(g9).join(' ')})`;
+  if (p.smooth) s += ' (smooth 1)';
   for (const x of (p.extra || [])) s += ' ' + x;
   return s + ')';
 }

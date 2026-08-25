@@ -1,0 +1,19 @@
+; sphere.ssq — mesh(OBJ) のシェーディング確認用 (tools/gen_sphere_obj.py が生成)
+;
+;   assets/sphere_novn.obj は **vn を持たない** ので、既定 ((smooth ..) 無し) では
+;   sqm もモデラーも **フラット** = 面が見える。
+;   sdfmodeler の右ペイン「シェーディング」を スムーズ (smooth 1) にすると
+;   (mesh .. (smooth 1)) が書き出され、両方とも滑らかになる。
+;   ⚠ 立方体だと変わらない (90° の稜線は 60° クリースを超えるため)。球は変わる。
+(scene
+  (background 0.10 0.11 0.13)
+  (camera (from 0 1.55 -4.6) (at 0 1.0 0) (up 0 1 0) (fov 32))
+  (light (pos -3.5 5.0 -4.0) (intensity 1.0) (color 1.0 0.98 0.95))
+  (light (pos  4.0 2.0 -2.0) (intensity 0.35) (color 0.80 0.86 1.0))
+  (object "floor"
+    (surface (color 0.30 0.31 0.33) (ka 0.10) (kd 0.75) (ks 0.05) (phong 20) (roi 1))
+    (sdf (plane (center 0 0 0) (normal 0 1 0) (offset 0))))
+  (object "sphere"
+    (surface (color 0.78 0.80 0.84) (ka 0.10) (kd 0.85) (ks 0.10) (phong 45) (roi 1))
+    (mesh (file "$SQM_ROOT/assets/sphere_novn.obj") (pos 0 1 0) (rot -90 0 0)))
+)

@@ -47,7 +47,7 @@ function checkContained(obj, sph, name) {
   ok(worst <= 0, `${name}: 全リーフが球内 (worst margin ${worst.toFixed(3)})`);
 }
 
-for (const file of ['trex.ssq', 'human.ssq', 'dog.ssq']) {
+for (const file of ['trex.ssq', 'humanbody.ssq', 'dog.ssq']) {
   const doc = parseScene(readFileSync(join(here, '../examples/', file), 'utf8'));
   const model = doc.objects.find(o => o.name !== 'ground');
   const ground = doc.objects.find(o => o.name === 'ground');
@@ -84,10 +84,10 @@ for (const file of ['trex.ssq', 'human.ssq', 'dog.ssq']) {
 
 /* collectObjSpheres: 可視オブジェクト順で plane 持ちは 1e9 */
 {
-  const doc = parseScene(readFileSync(join(here, '../examples/human.ssq'), 'utf8'));
+  const doc = parseScene(readFileSync(join(here, '../examples/humanbody.ssq'), 'utf8'));
   const arr = collectObjSpheres(doc);
   ok(arr.length >= 8 && arr[3] >= 1e8, 'collectObjSpheres: ground が 1e9');
-  ok(arr[7] < 100, 'collectObjSpheres: human が有限半径');
+  ok(arr[7] < 100, 'collectObjSpheres: humanbody が有限半径');
 }
 
 console.log(fails ? `\n${fails} 件失敗` : '\n全テスト成功');

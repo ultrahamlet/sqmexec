@@ -156,7 +156,10 @@ const mkRnd = seed => () => (seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 
    VM が対応を増やしても、参照が知らないリーフのシーンは静かに飛ばす
    (「参照が無いのに一致した」と誤解しないため、飛ばした数を最後に出す)。 */
 let skipped = 0;
-for (const name of ['rabbit', 'human', 'bear', 'arm']) {
+/* ⚠ human.ssq (素の capsule) は 2026-08-25 に examples から削除された。
+   humanbody.ssq は round-cone-ab を使っており evalRef が非対応なので、
+   同規模の関節リグとして dog.ssq (28ノード) に差し替えてある。 */
+for (const name of ['rabbit', 'dog', 'bear', 'arm']) {
   const doc = parseScene(fs.readFileSync(new URL('../examples/' + name + '.ssq', import.meta.url), 'utf8'));
   const lin = linearize(doc);
   if (!lin.ok) { ok(false, name + ': 線形化できない (' + lin.reason + ')'); continue; }

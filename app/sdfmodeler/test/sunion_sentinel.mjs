@@ -120,8 +120,28 @@ function sentinelFolds(frag) {
   ].join('\n')).length === 0, '検出器の自己検査: for 内の代入も番兵解除として拾う');
 }
 
-const SCENES = ['rabbit', 'trex', 'human', 'dog', 'frog', 'spider', 'ant', 'hand',
-                'penguin_blob', 'humanbody', '_prunetest'];
+const SCENES = ['rabbit', 'trex', 'dog', 'frog', 'spider', 'ant',
+                'penguin_blob', 'humanbody', 'leaf'];
+
+/* 素の subtract を持つ最小シーン。examples には**1本も無い** (2026-08-25 に
+   hand.ssq を削除したときに唯一の subtract 持ちだった) ので、ここに直書きして
+   codegen の subtract 経路を番兵検査から外さない。GLSL 直書きの自己検査と同じ流儀。 */
+const SUBTRACT_SCENE = `(scene
+  (background 0.16 0.19 0.24)
+  (camera (from 0 3 -9) (at 0 0 0) (up 0 1 0) (fov 42))
+  (light (pos 8 10 -6)(intensity 1.3)(color 1 0.97 0.9))
+  (object "cut"
+    (surface (color 0.7 0.6 0.5)(ka 0.22)(kd 0.8)(ks 0.35)(phong 24))
+    (sdf (translate (t 0 0 0)
+      (subtract (box (center 0 0 0) (size 2 2 2))
+                (box (center 0 0 0) (size 1.5 3 1.5)))))))`;
+{
+  const bad = sentinelFolds(buildProgram(parseScene(SUBTRACT_SCENE)).frag);
+  ok(bad.length === 0, '素の subtract: 番兵との smooth 合成なし' + (bad.length ? ` — ${bad[0]}` : ''));
+}
+/* ⚠ 素の union だけの対照 (smooth-union を含まないシーン) は、2026-08-25 に
+   examples から削除された _prunetest.ssq (散布60球・単一union) の代わりに
+   leaf.ssq (superquad×10 を union で連ねた3object) が受け持つ。 */
 for (const name of SCENES) {
   const doc = parseScene(readFileSync(join(here, `../examples/${name}.ssq`), 'utf8'));
   const bad = sentinelFolds(buildProgram(doc).frag);

@@ -26,7 +26,7 @@ import {
 import { BlobMesher } from './mbblob.js';
 import { LocalSdfMesher } from './sdfmeshlocal.js';
 import { collectSceneBlobs, collectObjectBlobs, rayPickBlob, blobRotMat, blobMatToEulerDeg, visibleRatio, threshFromWeight } from './blobnode.js';
-import { loadObj, objCacheGet, objCacheDrop, meshModelMat, meshNrmMat, rayPickObjMesh, buildGroupColored } from './objmesh.js';
+import { loadObj, objCacheGet, objCacheDrop, meshModelMat, meshNrmMat, rayPickObjMesh, buildGroupColored, buildShaded} from './objmesh.js';
 
 const $ = s => document.querySelector(s);
 const LS_KEY = 'sdfmodeler.autosave.v1';
@@ -151,20 +151,32 @@ const localMesher = new LocalSdfMesher();
 /* 純 blob オブジェクトはメッシュ化ジョブに出さない (WASM 再メッシュの重ね描きが
    受け持つ)。混在オブジェクトは blob 行だけ落として sdf 部を投げる —
    落とさないと field2obj が「blob と SDF の両方」で kind 判定に失敗する */
+/* この object に **marching cubes に掛けられる** リーフが在るか。
+   ⚠ blob と mesh(OBJ) は数えない — どちらも距離場に出ないので、数えると
+     「(mesh ..) だけの object」にジョブが作られ、(sdf も blob も無いテキストが
+     field2obj.detect_kind に渡って "blob も SDF も無いシーン" で落ちる。
+     すると refreshMesh 全体が失敗し、**表示セレクタが SDF に押し戻されて
+     メッシュ表示に切り替えられなくなる** (2026-08-25 修正)。
+     mesh(OBJ) は元から三角形なので refreshObjMeshes が直接ラスタライズする。
+     mesh が leaf 型になったのは第8弾 (2026-08-23) で、この判定が追随していなかった。 */
 function objHasSdfLeaf(o) {
   let f = false;
   const walk = n => {
     if (f) return;
     const sc = SCHEMA[n.type];
-    if (sc && sc.kind === 'leaf') { if (n.type !== 'blob') f = true; return; }
+    if (sc && sc.kind === 'leaf') { if (n.type !== 'blob' && n.type !== 'mesh') f = true; return; }
     n.children.forEach(walk);
   };
   if (o && o.root) walk(o.root);
   return f;
 }
+/* メッシュ化に投げるテキスト。blob と mesh(OBJ) の行は落とす —
+   場に出ないので無駄なだけでなく、(mesh ..) はローカル WASM が
+   "obj_load はWASMでは非対応" で落ちる (= sdf と mesh が同居する object が
+   毎回サーバ経路へ落ちる)。 */
 function objMeshText(o) {
   return serializeScene({ ...doc, objects: [o] }, viewer.getCamera())
-    .split('\n').filter(l => !/^\s*\(blob /.test(l)).join('\n');
+    .split('\n').filter(l => !/^\s*\((blob|mesh) /.test(l)).join('\n');
 }
 
 /* ハイブリッド表示 (focus ドラッグ中の文脈メッシュ) のために、リーフが多い
@@ -214,8 +226,12 @@ async function refreshMesh() {
       const ct = res.headers.get('content-type') || '';
       if (ct.includes('json')) {
         const j = await res.json();
-        /* 「メッシュ化対象が無い」(床plane だけ等) は正常系 — 空で覚える */
-        if (/対象/.test(j.error || '')) { meshCache.set(job.key, null); return null; }
+        /* 「メッシュ化対象が無い」(床plane だけ等) は正常系 — 空で覚える。
+           ⚠ field2obj は "blob も SDF も無いシーン" という別の文言でも投げるので
+              両方拾う (「対象」だけだと当たらず、シーン全体の失敗になっていた) */
+        if (/対象|blob も SDF も無い/.test(j.error || '')) {
+          meshCache.set(job.key, null); return null;
+        }
         throw new Error(j.error || 'メッシュ化失敗');
       }
       if (!res.ok) throw new Error('サーバが未対応 (serve.py 経由で開いていない可能性)');
@@ -429,7 +445,15 @@ function refreshObjMeshes() {
         }
         continue;
       }
-      const g = st.mesh;
+      let g = st.mesh;
+      /* シェーディング: エンジンの規約で法線を焼き直す (objmesh.buildShaded)。
+         これをしないとモデラーだけ常にスムーズ = sqm でフラットになる食い違いが出る。
+         キャッシュはファイル単位なので mode ごとに持つ (同じ OBJ を別モードで
+         参照する2ノードがありうる) */
+      const shadeMode = m.node.props.smooth ? 'smooth' : 'file';
+      if (!st.shaded) st.shaded = new Map();
+      if (!st.shaded.has(shadeMode)) st.shaded.set(shadeMode, buildShaded(g, shadeMode));
+      g = st.shaded.get(shadeMode);
       /* group-surface 色分け: extra に (color ..) 付き group-surface があれば
          グループごとに頂点色を焼いた複製ジオメトリで表示する (エンジンの
          塗り分けと同じ o/g 一致規則)。写像が変わったときだけ焼き直し =
@@ -438,7 +462,7 @@ function refreshObjMeshes() {
       let geom = g;
       const gcols = meshGroupColors(m.node);
       if (gcols.size && g.groupNames.length) {
-        const key = JSON.stringify([...gcols]) + '|' + col.join(',');
+        const key = JSON.stringify([...gcols]) + '|' + col.join(',') + '|' + shadeMode;
         if (!st.colored || st.colored.key !== key) {
           st.colored = { key, geom: buildGroupColored(g,
             gi => gcols.get(g.groupNames[gi]) || null, col) };
@@ -801,7 +825,12 @@ function renderTree() {
     hdr.className = 'obj-row' + (sel.objIdx === oi && sel.nodeId == null ? ' sel' : '');
     const eye = document.createElement('span');
     eye.className = 'eye';
-    eye.textContent = obj.visible ? '👁' : '–';
+    /* ⚠ ここを絵文字にしないこと (2026-08-24)。👁 (U+1F441) は macOS の
+       絵文字フォントへフォールバックし、**行を作り直すたびのレイアウトが
+       1行あたり約1.9ms** になる。ツリー73行のシーンでクリック→編集可能まで
+       146ms のうち 140ms がこれだった (ASCII/記号なら 0.4ms)。
+       詳細: docs/2026-08-24_sdfmodeler_ツリーの絵文字がクリック応答を支配していた.md */
+    eye.textContent = obj.visible ? '◉' : '–';
     eye.title = '表示/非表示';
     eye.onclick = e => { e.stopPropagation(); snapshot(); obj.visible = !obj.visible; mutated(); };
     const sw = document.createElement('span');
@@ -886,12 +915,12 @@ function renderNodeRow(box, n, oi, depth, dimmed = false) {
     + (off || dimmed ? ' off' : '');
   row.style.paddingLeft = (depth * 14 + 6) + 'px';
   /* ノード単位の表示トグル (2026-07-27)。重いパーツ (例: 撚り紐 sweep) を
-     **レイマーチ表示だけ**から外すための view 状態 — オブジェクト行の👁と同じ規約で、
+     **レイマーチ表示だけ**から外すための view 状態 — オブジェクト行の◉と同じ規約で、
      .ssq 書き出し / メッシュ化 / 🎬sqm レンダには含まれたまま。
      サブツリーごとシェーダから消えるので、コンパイルも毎フレームも軽くなる。 */
   const eye = document.createElement('span');
   eye.className = 'eye';
-  eye.textContent = off ? '–' : '👁';
+  eye.textContent = off ? '–' : '◉';   /* ⚠ 絵文字にしない (上の obj-row の注記参照) */
   eye.title = 'レイマーチ表示から除外/復帰 (書き出し・メッシュ・sqmレンダには含まれる)';
   eye.onclick = e => { e.stopPropagation(); snapshot(); n.hidden = !n.hidden; mutated(); };
   const icon = document.createElement('span');
@@ -1139,6 +1168,46 @@ function renderMeshFields(box, node) {
     : `${st.mesh.nTris.toLocaleString()} tris / ${(st.mesh.verts.length / 3).toLocaleString()} verts`;
   info.appendChild(span);
   box.appendChild(info);
+  /* ── シェーディング (2026-08-25) ─────────────────────────────────────
+     モデラーの表示と sqm のレンダーを一致させるための切り替え。
+     エンジンが表現できるのはこの2状態だけ (「フラット強制」のキーは無い):
+       (smooth ..) 無し → OBJ に vn があればそれ、無ければ面法線 = フラット
+       (smooth 1)       → obj_compute_smooth_normals (クリース 60°) */
+  {
+    const srow = fieldRow('シェーディング');
+    const sel = document.createElement('select');
+    [['フラット / vn まかせ', 0], ['スムーズ (smooth 1)', 1]].forEach(([lb, v]) => {
+      const o = document.createElement('option');
+      o.value = v; o.textContent = lb;
+      if ((node.props.smooth ? 1 : 0) === v) o.selected = true;
+      sel.appendChild(o);
+    });
+    sel.addEventListener('change', () => {
+      const v = +sel.value ? 1 : 0;
+      if (v === (node.props.smooth ? 1 : 0)) return;
+      snapshot();
+      node.props.smooth = v;
+      refreshObjMeshes();
+      updateBlobSelRing();
+      autosave();
+      renderInspector();
+    });
+    srow.appendChild(sel);
+    box.appendChild(srow);
+
+    /* sqm 側が実際に何をするかを明示する (ここが食い違いの発生源だったので) */
+    const hint = fieldRow('sqm');
+    const hs = document.createElement('span');
+    hs.style.opacity = '0.7';
+    hs.style.fontSize = '11px';
+    const hasVN = st && st.status === 'ok' && st.mesh.hasVN;
+    hs.textContent = node.props.smooth
+      ? '(smooth 1) — 位置で溶接しクリース60°で平滑化'
+      : (hasVN ? 'OBJ の vn をそのまま使用 (この OBJ は vn を持つ)'
+               : '面法線 = フラット (この OBJ は vn を持たない)');
+    hint.appendChild(hs);
+    box.appendChild(hint);
+  }
   if (node.props.extra && node.props.extra.length) {
     const ex = fieldRow('保全');
     const s2 = document.createElement('span');
@@ -2492,7 +2561,7 @@ function download(name, text) {
   URL.revokeObjectURL(a.href);
 }
 /* ── シーン読込時の重量パーツ自動除外 (2026-07-27) ─────────────────────────
-   明らかに重い葉を最初から👁OFF (hidden) で開く。招き猫の撚り紐 (sweep 1680反復×3
+   明らかに重い葉を最初から◉OFF (hidden) で開く。招き猫の撚り紐 (sweep 1680反復×3
    = シーンの97%) を SDF レイマーチのまま開いて GPU が落ちた事故の再発防止。
    「明らかに」の判定は絶対と相対の両方:
      - 絶対 HEAVY_ABS (既定300): これ未満は隠さない。実測の目安 — 撚り紐1680は
@@ -2502,7 +2571,7 @@ function download(name, text) {
        「相対的に重い」と誤爆して頭だけが浮いた (実際に踏んだ)。割合なら
        「全パーツが一様に重い」シーンでも誰も 15% を超えず全消しにならない
    window.__HEAVY_ABS / __HEAVY_FRAC で上書き可 (SPH_REL と同じ流儀)。
-   view 状態なので書き出し/メッシュ/sqmレンダには含まれる。ツリーの👁で個別復帰。 */
+   view 状態なので書き出し/メッシュ/sqmレンダには含まれる。ツリーの◉で個別復帰。 */
 const HEAVY_ABS = () => (window.__HEAVY_ABS != null ? window.__HEAVY_ABS : 300);
 const HEAVY_FRAC = () => (window.__HEAVY_FRAC != null ? window.__HEAVY_FRAC : 0.15);
 const HEAVY_MAX_FRAC = () => (window.__HEAVY_MAX_FRAC != null ? window.__HEAVY_MAX_FRAC : 0.55);
@@ -2567,7 +2636,7 @@ function importText(text, fileName = '') {
       const total = autoHidden.reduce((a, l) => a + l.cost, 0);
       const msg = `読み込みました: ${fileName || '(テキスト)'} — 重いパーツ `
           + `${autoHidden.length}個 (${total.toLocaleString()}反復/サンプル) を`
-          + `レイマーチ表示から自動除外しました。ツリーの👁で復帰できます`
+          + `レイマーチ表示から自動除外しました。ツリーの◉で復帰できます`
           + ` (書き出し・メッシュ・sqmレンダには含まれます)`;
       if (!sticky || !sticky.err) sticky = { msg, err: false };
       setStatus(msg);

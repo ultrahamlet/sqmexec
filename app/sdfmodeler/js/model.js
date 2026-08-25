@@ -70,7 +70,8 @@ export const SCHEMA = {
      表示はラスタライズ (objmesh.js)・ピックは CPU レイ・三角形。頂点は編集不可 =
      transform (center/scale/rot) と材質だけ編集できる。rot は engine
      obj_loader の scale→Rx→Ry→Rz→translate = blob と同じ ZYX 合成。
-     file / extra (smooth・use-mtl・group-surface の保全) は文字列 props */
+     file / extra (use-mtl・group-surface の保全) は文字列 props。
+     smooth は UI で切り替えるので extra でなく数値 props (0/1) に分離してある */
   'mesh':          { kind: 'leaf', label: 'メッシュ(OBJ)', fields: [v3('center'), v3('scale', [1, 1, 1]), v3('rot')] },
   /* ops (エディタ上は n-ary。エクスポート時に2項へ畳む) */
   'union':           { kind: 'op', label: '和 ∪',          fields: [] },
@@ -115,6 +116,9 @@ export function makeNode(type, props = {}, children = []) {
   if (type === 'mesh') {
     p.file = props.file || '';
     p.extra = props.extra ? props.extra.slice() : [];
+    /* 0 = (smooth ..) を書かない = エンジンは vn があればそれ・無ければフラット
+       1 = (smooth 1) = obj_compute_smooth_normals (クリース 60°) */
+    p.smooth = props.smooth ? 1 : 0;
   }
   /* ブレンド種別は UI フィールドではなく文字列 props (poly/round/deep/chamfer)。
      fields に無いので makeNode で明示的に写す (raw.text や sweep.points と同じ扱い) */
@@ -873,6 +877,10 @@ function meshFromForm(e) {
       file = (v && typeof v === 'object' && 'str' in v) ? v.str : String(v ?? '');
     } else if (k === 'pos' || k === 'scale' || k === 'rot') {
       kv[k] = q.slice(1).map(N);
+    } else if (k === 'smooth') {
+      /* シェーディングは extra に埋めず props にする (UI で切り替えるため。
+         extra のままだと書き出しで二重に出る) */
+      kv.smooth = N(q[1]) ? 1 : 0;
     } else {
       extra.push(serialize(q));
     }
@@ -883,7 +891,7 @@ function meshFromForm(e) {
     center: (kv.pos || [0, 0, 0]).slice(0, 3),
     scale: sc.length >= 3 ? sc.slice(0, 3) : [sc[0] ?? 1, sc[0] ?? 1, sc[0] ?? 1],
     rot: (kv.rot || [0, 0, 0]).slice(0, 3),
-    file, extra,
+    file, extra, smooth: kv.smooth ?? 0,
   });
 }
 

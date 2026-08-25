@@ -7,15 +7,29 @@
  * これは blob の幾何回転 (blobnode.blobRotMat = ZYX) と**同じ合成順**なので、
  * 回転まわりは blobRotMat / blobMatToEulerDeg をそのまま流用できる。
  *
- * 頂点法線は vn を読まず面法線の加算平均で作る (v//vn の添字分裂で頂点を
- * 複製するコストを避ける。プレビュー用途には十分)。 */
+ * 法線は **エンジン (dist/obj_loader.cpp) の規約をそのまま写す** (2026-08-25)。
+ * かつては vn を読まず面法線を無条件に加算平均していたので、モデラーだけが
+ * 常にスムーズに見え、sqm でレンダーするとフラットになる、という食い違いがあった。
+ * 今は buildShaded(mesh, mode) が2つのモードを厳密に再現する:
+ *   'file'   = .ssq に (smooth ..) が無いとき。OBJ に vn があればそれを使い、
+ *              無ければ面法線 = **フラット**。
+ *   'smooth' = (smooth 1)。obj_compute_smooth_normals(): 同じ位置の頂点を溶接し、
+ *              面法線どうしの角度が 60° 未満のものだけ足して正規化する。
+ *              ⚠ 足すのは **単位面法線** (面積加重ではない — 旧実装は加重していた)。
+ * どちらも角ごとに法線が違いうるので、角を (頂点, 法線) で分裂させて溶接し直す
+ * (フラットは頂点が約3倍になる。これは平面シェーディングの原理的コスト)。
+ * ⚠ エンジンの溶接は位置の 1e-5 箱判定、こちらは 1e-5 量子化キーのハッシュ。
+ *   完全一致の重複頂点 (通常の OBJ) では同じ結果になるが、1e-5 未満で
+ *   セル境界を跨ぐ頂点対だけは溶接されない。 */
 
 const cache = new Map();   /* file 文字列 → {status:'loading'|'ok'|'err', mesh, error} */
 
 /* OBJ テキスト → { verts, normals, indices, lo, hi, nTris } */
 export function parseObjText(text) {
   const vs = [];             /* flat x,y,z */
+  const ns = [];             /* flat vn x,y,z */
   const idx = [];
+  const cn = [];             /* 角ごとの vn 添字 (-1 = 無し) */
   const triGroup = [];       /* 三角形ごとのグループ index (-1 = なし) */
   const groupNames = [];
   let curGroup = -1;
@@ -36,20 +50,27 @@ export function parseObjText(text) {
       /* engine obj_loader と同じ: o/g とも同名なら同じグループに畳む */
       const nm = line.slice(2).trim();
       curGroup = nm ? groupId(nm) : -1;
+    } else if (c0 === 118 /* v */ && line.charCodeAt(1) === 110 /* n */
+               && line.charCodeAt(2) === 32) {
+      const t = line.trim().split(/\s+/);
+      ns.push(+t[1] || 0, +t[2] || 0, +t[3] || 0);
     } else if (c0 === 102 /* f */ && line.charCodeAt(1) === 32) {
       const t = line.trim().split(/\s+/);
-      const nv = vs.length / 3;
-      const face = [];
+      const nv = vs.length / 3, nn = ns.length / 3;
+      const face = [], faceN = [];
       for (let k = 1; k < t.length; k++) {
         const s = t[k];
         if (!s) continue;
-        const sl = s.indexOf('/');
-        const i = parseInt(sl >= 0 ? s.slice(0, sl) : s, 10);
+        const part = s.split('/');
+        const i = parseInt(part[0], 10);
         if (!i) continue;                       /* 0 や NaN (行末 \r 等) は捨てる */
         face.push(i > 0 ? i - 1 : nv + i);      /* 負添字 = 相対 (-1 が最後) */
+        let q = (part.length >= 3 && part[2]) ? parseInt(part[2], 10) : 0;
+        faceN.push(q ? (q > 0 ? q - 1 : nn + q) : -1);
       }
       for (let k = 2; k < face.length; k++) {   /* n-gon は扇形分割 */
         idx.push(face[0], face[k - 1], face[k]);
+        cn.push(faceN[0], faceN[k - 1], faceN[k]);
         triGroup.push(curGroup);
       }
     }
@@ -80,7 +101,112 @@ export function parseObjText(text) {
     }
   if (!n) { lo.fill(0); hi.fill(0); }
   return { verts, normals, indices, lo, hi, nTris: indices.length / 3,
-           triGroup: Int32Array.from(triGroup), groupNames };
+           triGroup: Int32Array.from(triGroup), groupNames,
+           objN: new Float32Array(ns), cornerN: Int32Array.from(cn),
+           hasVN: ns.length > 0 && cn.some(q => q >= 0) };
+}
+
+/* 三角形ごとの単位面法線 (エンジンと同じ: 正規化してから足す) */
+function faceNormals(mesh) {
+  const { verts, indices } = mesh;
+  const nt = indices.length / 3;
+  const fn = new Float32Array(nt * 3);
+  for (let t = 0; t < nt; t++) {
+    const a = indices[t * 3] * 3, b = indices[t * 3 + 1] * 3, c = indices[t * 3 + 2] * 3;
+    if (a >= verts.length || b >= verts.length || c >= verts.length) { fn[t * 3 + 1] = 1; continue; }
+    const ux = verts[b] - verts[a], uy = verts[b + 1] - verts[a + 1], uz = verts[b + 2] - verts[a + 2];
+    const wx = verts[c] - verts[a], wy = verts[c + 1] - verts[a + 1], wz = verts[c + 2] - verts[a + 2];
+    let nx = uy * wz - uz * wy, ny = uz * wx - ux * wz, nz = ux * wy - uy * wx;
+    const l = Math.hypot(nx, ny, nz);
+    if (l > 1e-20) { nx /= l; ny /= l; nz /= l; } else { nx = 0; ny = 1; nz = 0; }
+    fn[t * 3] = nx; fn[t * 3 + 1] = ny; fn[t * 3 + 2] = nz;
+  }
+  return fn;
+}
+
+/* 角ごとの法線 (長さ nTris*9)。mode は 'file' | 'smooth' (上のヘッダ参照) */
+export function cornerNormals(mesh, mode) {
+  const { indices } = mesh;
+  const nt = indices.length / 3;
+  const fn = faceNormals(mesh);
+  const out = new Float32Array(nt * 9);
+
+  if (mode !== 'smooth') {
+    /* 'file' — vn があればそれ (欠けている角は面法線)。無ければ全部面法線 = フラット */
+    for (let t = 0; t < nt; t++)
+      for (let k = 0; k < 3; k++) {
+        const o = (t * 3 + k) * 3;
+        const ni = mesh.hasVN ? mesh.cornerN[t * 3 + k] : -1;
+        if (ni >= 0 && (ni + 1) * 3 <= mesh.objN.length) {
+          out[o] = mesh.objN[ni * 3]; out[o + 1] = mesh.objN[ni * 3 + 1]; out[o + 2] = mesh.objN[ni * 3 + 2];
+        } else {
+          out[o] = fn[t * 3]; out[o + 1] = fn[t * 3 + 1]; out[o + 2] = fn[t * 3 + 2];
+        }
+      }
+    return out;
+  }
+
+  /* 'smooth' — 位置で溶接 → クリース 60° 内の単位面法線だけ足して正規化 */
+  const share = new Map();
+  const ck = new Array(nt * 3);
+  const key = v => {
+    const o = v * 3;
+    return Math.round(mesh.verts[o] * 1e5) + ',' +
+           Math.round(mesh.verts[o + 1] * 1e5) + ',' +
+           Math.round(mesh.verts[o + 2] * 1e5);
+  };
+  for (let t = 0; t < nt; t++)
+    for (let k = 0; k < 3; k++) {
+      const kk = key(indices[t * 3 + k]);
+      ck[t * 3 + k] = kk;
+      let a = share.get(kk);
+      if (!a) share.set(kk, a = []);
+      a.push(t);
+    }
+  const CREASE = 0.5;                 /* cos(60°) — エンジンの crease_cos と同じ */
+  for (let t = 0; t < nt; t++) {
+    const nx = fn[t * 3], ny = fn[t * 3 + 1], nz = fn[t * 3 + 2];
+    for (let k = 0; k < 3; k++) {
+      const lst = share.get(ck[t * 3 + k]);
+      let ax = 0, ay = 0, az = 0;
+      for (let j = 0; j < lst.length; j++) {
+        const o2 = lst[j] * 3;
+        if (fn[o2] * nx + fn[o2 + 1] * ny + fn[o2 + 2] * nz >= CREASE) {
+          ax += fn[o2]; ay += fn[o2 + 1]; az += fn[o2 + 2];
+        }
+      }
+      const l = Math.hypot(ax, ay, az), o = (t * 3 + k) * 3;
+      if (l > 1e-12) { out[o] = ax / l; out[o + 1] = ay / l; out[o + 2] = az / l; }
+      else           { out[o] = nx;     out[o + 1] = ny;     out[o + 2] = nz; }
+    }
+  }
+  return out;
+}
+
+/* mode の法線を焼いたジオメトリ。角を (頂点, 法線) で分裂させてから溶接するので、
+ * スムーズなら頂点数はほぼ元のまま・フラットなら約3倍になる。 */
+export function buildShaded(mesh, mode) {
+  const cn = cornerNormals(mesh, mode);
+  const map = new Map();
+  const outV = [], outN = [];
+  const outI = new Uint32Array(mesh.indices.length);
+  const Q = 1e4;                      /* 法線の溶接キー量子化 */
+  for (let i = 0; i < mesh.indices.length; i++) {
+    const v = mesh.indices[i], o = i * 3;
+    const k = v + '|' + Math.round(cn[o] * Q) + ',' +
+                        Math.round(cn[o + 1] * Q) + ',' + Math.round(cn[o + 2] * Q);
+    let ni = map.get(k);
+    if (ni === undefined) {
+      ni = outV.length / 3;
+      map.set(k, ni);
+      outV.push(mesh.verts[v * 3], mesh.verts[v * 3 + 1], mesh.verts[v * 3 + 2]);
+      outN.push(cn[o], cn[o + 1], cn[o + 2]);
+    }
+    outI[i] = ni;
+  }
+  return { verts: new Float32Array(outV), normals: new Float32Array(outN),
+           indices: outI, triGroup: mesh.triGroup, groupNames: mesh.groupNames,
+           nTris: mesh.nTris, lo: mesh.lo, hi: mesh.hi };
 }
 
 /* group-surface 色分け表示用: 三角形のグループごとに頂点色を焼いた複製ジオメトリ。

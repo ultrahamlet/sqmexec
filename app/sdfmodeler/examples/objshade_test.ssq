@@ -1,0 +1,9 @@
+; objshade_test.ssq — mesh(OBJ) の smooth/flat 切り替え確認用 (2026-08-25)
+(scene
+  (background 0.10 0.11 0.13)
+  (camera (from 0 1.6 -4.2) (at 0 0 0) (up 0 1 0) (fov 34))
+  (light (pos -3 5 -4) (intensity 1.0) (color 1 1 1))
+  (object "dolphin"
+    (surface (color 0.80 0.82 0.86) (ka 0.10) (kd 0.90) (ks 0) (phong 0) (roi 1))
+    (mesh (file "$SQM_ROOT/assets/dolphin.obj") (rot -90 0 0)))
+)

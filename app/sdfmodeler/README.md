@@ -231,6 +231,7 @@ python3 -m http.server 8642
 
 ```bash
 node test/roundtrip.mjs   # frog.ssq のラウンドトリップ + codegen smoke
+node test/objshade.mjs    # mesh(OBJ) の flat/smooth がエンジンと一致するか (クリース60°・位置溶接・(smooth 1) 往復)
 node test/anchor.mjs      # ギズモ数学 (worldAnchor / 回転祖先下のデルタ往復一致)
 node test/rotate.mjs      # 回転ギズモ数学 (ワールド軸角合成 / rotate-mat / 直交性維持)
 node test/scale.mjs       # スケール仕様 (リーフ別寸法マッピング / ab中点固定伸縮 / 往復恒等)
