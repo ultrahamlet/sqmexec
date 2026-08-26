@@ -3,8 +3,8 @@
     "platforms": {
         "windows-x64": {
             "sqm": {
-                "commit": "338d7dc",
-                "subject": "shibuya_scramble: 渋谷スクランブル交差点 — バク転人体を夜の交差点に立たせる",
+                "commit": "3fe38c5",
+                "subject": "sdfmodeler: examples/objs/ を無視 + examples/snow.ssq を追加",
                 "bytes": 4989433
             },
             "shader_core": {
@@ -33,7 +33,7 @@
     },
     "app": {
         "sdfmodeler": {
-            "commit": "338d7dc",
+            "commit": "3fe38c5",
             "note": "sqm/sdfmodeler の追跡ファイルの snapshot。原本は sqm 側"
         }
     }
