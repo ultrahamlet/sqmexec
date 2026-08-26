@@ -107,6 +107,15 @@ function Set-SqmEnvVars($e) {
     if ($e.Ucrt64Bin -and (Test-Path $e.Ucrt64Bin) -and ($env:PATH -notlike "*$($e.Ucrt64Bin)*")) {
         $env:PATH = $e.Ucrt64Bin + ';' + $env:PATH
     }
+    # ⑤ GPU DLL の場所だけ通しておく (あれば)。sqm.exe の既定探索は cwd 相対
+    #    "../gpu/sqm_gpu.dll" なので、sqmexec から起動すると見つからない。
+    #    プリパス等の GPU 機能自体は opt-in のまま (SQM_SHADOW_PREPASS=1 など。
+    #    影が支配的な多ライト+blob シーンで数倍速くなる — 渋谷 2026-08-26: 422s→67s。
+    #    no-blend シーンは SQM_GPU_MB_NOBLEND_SHADOW=1 も併せて)
+    if (-not $env:SQM_GPU_DLL) {
+        $gdll = Join-Path $e.SqmRepo 'gpu\sqm_gpu.dll'
+        if (Test-Path $gdll) { $env:SQM_GPU_DLL = $gdll }
+    }
 }
 
 # MSYS2 UCRT64 の bash でコマンドを実行 (ビルド用)
