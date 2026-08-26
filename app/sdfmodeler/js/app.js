@@ -1602,7 +1602,7 @@ function renderInspector() {
 
   const btns = document.createElement('div');
   btns.className = 'btnrow';
-  btns.appendChild(button('DUP.', () => {
+  btns.appendChild(button('DUP', () => {
     snapshot();
     const c = cloneNode(node);
     if (parent) parent.children.splice(parent.children.indexOf(node) + 1, 0, c);
