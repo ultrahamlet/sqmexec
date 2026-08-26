@@ -112,9 +112,13 @@ function Set-SqmEnvVars($e) {
     #    プリパス等の GPU 機能自体は opt-in のまま (SQM_SHADOW_PREPASS=1 など。
     #    影が支配的な多ライト+blob シーンで数倍速くなる — 渋谷 2026-08-26: 422s→67s。
     #    no-blend シーンは SQM_GPU_MB_NOBLEND_SHADOW=1 も併せて)
+    #    探索順は実行ファイルと同じ規約: ソースツリー (開発機。常に最新) →
+    #    同梱 bin/<platform> (配布先。sqm リポジトリを持たない)
     if (-not $env:SQM_GPU_DLL) {
-        $gdll = Join-Path $e.SqmRepo 'gpu\sqm_gpu.dll'
-        if (Test-Path $gdll) { $env:SQM_GPU_DLL = $gdll }
+        foreach ($cand in @((Join-Path $e.SqmRepo 'gpu\sqm_gpu.dll'),
+                            (Join-Path $PSScriptRoot '..\bin\windows-x64\sqm_gpu.dll'))) {
+            if (Test-Path $cand) { $env:SQM_GPU_DLL = (Resolve-Path $cand).Path; break }
+        }
     }
 }
 

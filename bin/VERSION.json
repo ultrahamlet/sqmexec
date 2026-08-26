@@ -13,7 +13,12 @@
                 "bytes": 680777
             },
             "built_with": "MSYS2 UCRT64 GCC 16.2.0 (static link)",
-            "runtime_deps": "Windows 10/11 のシステム DLL のみ (UCRT)。MSYS2 不要 — 実測確認済み"
+            "runtime_deps": "Windows 10/11 のシステム DLL のみ (UCRT)。MSYS2 不要 — 実測確認済み",
+            "sqm_gpu": {
+                "commit": "3fe38c5",
+                "bytes": 2467840,
+                "note": "任意。CUDA 遮蔽オフロード (SQM_SHADOW_PREPASS 等)。無くても sqm は CPU で動く。MSVC + nvcc ビルド"
+            }
         },
         "darwin-arm64": {
             "sqm": {

@@ -55,11 +55,37 @@ $binDir = Join-Path $PSScriptRoot 'bin\windows-x64'
 $appDir = Join-Path $PSScriptRoot 'app\sdfmodeler'
 
 # ── バイナリ ────────────────────────────────────────────────
+# 中身が同じなら**触らない**。git 的には差分ゼロだが、mtime だけ動くと
+# 「publish したのに何も変わっていない」のか「変わったのに気づいていない」のか
+# 見分けが付かなくなる。ハッシュで比べて、更新した物だけを報告する。
+function Copy-IfChanged([string]$src, [string]$dst, [string]$label) {
+    if ((Test-Path $dst) -and
+        (Get-FileHash $src).Hash -eq (Get-FileHash $dst).Hash) {
+        return $false
+    }
+    Copy-Item $src $dst -Force
+    return $true
+}
+
 if (-not $SkipBin) {
     New-Item -ItemType Directory -Force -Path $binDir | Out-Null
-    Copy-Item $e.BuiltExe  (Join-Path $binDir 'sqm.exe')     -Force
-    Copy-Item $e.BuiltCore (Join-Path $binDir 'shader.core') -Force
-    Write-Ok "bin/windows-x64  sqm.exe + shader.core"
+    $changed = @()
+    if (Copy-IfChanged $e.BuiltExe  (Join-Path $binDir 'sqm.exe'))     { $changed += 'sqm.exe' }
+    if (Copy-IfChanged $e.BuiltCore (Join-Path $binDir 'shader.core')) { $changed += 'shader.core' }
+
+    # GPU オフロード DLL (CUDA)。**任意** — 無くても sqm は CPU で動く。
+    # ⚠ これは MSVC + nvcc でビルドされる別物 (MinGW の sqm.exe とは C ABI 境界で
+    #   つながっている)。ソースツリーに無ければ黙って飛ばす — 配布物から
+    #   消してはいけない (別マシンが置いた物を巻き添えにしないため)。
+    $gpuSrc = Join-Path $e.SqmRepo 'gpu\sqm_gpu.dll'
+    if (Test-Path $gpuSrc) {
+        if (Copy-IfChanged $gpuSrc (Join-Path $binDir 'sqm_gpu.dll')) { $changed += 'sqm_gpu.dll' }
+    } else {
+        Write-Warn2 "sqm/gpu/sqm_gpu.dll が無い — GPU DLL は据え置き (gpu/build_gpu_dll.bat でビルド)"
+    }
+
+    if ($changed) { Write-Ok "bin/windows-x64  $($changed -join ' + ') を更新" }
+    else          { Write-Ok "bin/windows-x64  変更なし (中身が同一)" }
 }
 
 # ── sdfmodeler (ブラウザエディタ一式) ───────────────────────
@@ -136,6 +162,18 @@ if (-not $SkipBin) {
         }
         built_with   = "MSYS2 UCRT64 GCC 16.2.0 (static link)"
         runtime_deps = "Windows 10/11 のシステム DLL のみ (UCRT)。MSYS2 不要 — 実測確認済み"
+    }
+    # GPU DLL は任意。**同梱されている場合だけ**欄を作る (無いのに欄が残ると
+    # 「あるはずの物が消えた」と読める)。ソースは追跡されていないので
+    # commit は sqm の HEAD = 「いつの作業ツリーから焼いたか」の記録。
+    $gpuDst = Join-Path $binDir 'sqm_gpu.dll'
+    if (Test-Path $gpuDst) {
+        $platforms['windows-x64'].sqm_gpu = [ordered]@{
+            commit = (git -C $e.SqmRepo rev-parse --short HEAD)
+            bytes  = (Get-Item $gpuDst).Length
+            note   = "任意。CUDA 遮蔽オフロード (SQM_SHADOW_PREPASS 等)。" +
+                     "無くても sqm は CPU で動く。MSVC + nvcc ビルド"
+        }
     }
 } elseif (-not $platforms.Contains('windows-x64')) {
     Write-Warn2 "-SkipBin だが VERSION.json に windows-x64 が無い — 欄は空のままです"

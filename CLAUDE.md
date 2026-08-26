@@ -11,6 +11,9 @@ sqm の配布モデル (**ソースを公開せず、バイナリ + shader.core 
 
 **入れる (配布物)**
 - `bin/<platform>/sqm.exe` + `shader.core` — 実行に必要な2つ
+- `bin/windows-x64/sqm_gpu.dll` — **任意**。CUDA 遮蔽オフロード
+  (`SQM_SHADOW_PREPASS=1` 等)。無くても CPU で動くので、NVIDIA 機だけの上乗せ。
+  publish は sqm/gpu/ にあれば運ぶ (無ければ据え置き = 消さない)
 - `app/sdfmodeler/` — ブラウザエディタ一式 (html/js/wasm/serve.py)
 - `scenes/smoke.ssq` — 自己診断用の最小シーン
 - 手順・ラッパ・診断・文書
