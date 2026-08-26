@@ -3,8 +3,8 @@
     "platforms": {
         "windows-x64": {
             "sqm": {
-                "commit": "a94f969",
-                "subject": "shade_dr: 影の可視度をメモ化 — 同じ点・同じ光源へのレイの二重撃ちをやめる",
+                "commit": "338d7dc",
+                "subject": "shibuya_scramble: 渋谷スクランブル交差点 — バク転人体を夜の交差点に立たせる",
                 "bytes": 4989433
             },
             "shader_core": {
@@ -33,7 +33,7 @@
     },
     "app": {
         "sdfmodeler": {
-            "commit": "1135a90",
+            "commit": "338d7dc",
             "note": "sqm/sdfmodeler の追跡ファイルの snapshot。原本は sqm 側"
         }
     }
