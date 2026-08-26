@@ -1897,14 +1897,33 @@ function endGizmoDrag() {
   scheduleBlobMesh();                   /* ドラッグ終わり: level 6 で焼き直す */
 }
 
-function gizmoStart() {
+/* 移動ギズモを Shift 付きで掴んだら「複製して、コピーの方をドラッグする」
+   (Illustrator/Blender の alt ドラッグと同じ操作感)。掴んだ時点の Shift だけを見るので、
+   ドラッグ開始後に Shift を離せば自由移動・押したままなら 0.1 スナップも同時に効く。
+   ⚠ 複製するのは選択ノードではなく **移動対象** (resolveMoveTarget の結果)。
+   「親が translate ならその t を動かす」経路があるため、選択ノードだけ複製すると
+   同じ translate に子が2つぶら下がり、元とコピーが一緒に動いてしまう。 */
+function duplicateForDrag(obj, tgt) {
+  const src = tgt.node;
+  const r = findNode(obj.root, src.id);
+  const c = cloneNode(src);
+  if (r && r.parent) r.parent.children.splice(r.parent.children.indexOf(src) + 1, 0, c);
+  else obj.root = makeNode('union', {}, [src, c]);   /* ルートは union でまとめる (DUP と同じ) */
+  sel.nodeId = c.id;
+  return { node: c, keys: tgt.keys };
+}
+function gizmoStart(ev) {
   const node = selectedNode();
   if (!node) return false;
   const obj = selectedObj();
   snapshot();
-  const tgt = resolveMoveTarget(obj, node);
-  if (tgt.wrapped) { mutated(); renderInspector(); }
-  gmove = { obj, node: tgt.node, keys: tgt.keys, orig: tgt.keys.map(k => tgt.node.props[k].slice()) };
+  let tgt = resolveMoveTarget(obj, node);
+  let structural = !!tgt.wrapped;
+  const duped = !!(ev && ev.shiftKey);
+  if (duped) { tgt = duplicateForDrag(obj, tgt); structural = true; }
+  if (structural) { mutated(); renderTree(); renderInspector(); }
+  gmove = { obj, node: tgt.node, keys: tgt.keys, duped,
+            orig: tgt.keys.map(k => tgt.node.props[k].slice()) };
   beginGizmoDrag();
   return true;
 }
@@ -1919,7 +1938,8 @@ function gizmoMove(dWorld, ev) {
   });
   mutated(false);
   const p = gmove.node.props[gmove.keys[0]].slice(0, 3);
-  setStatus(`移動: ${gmove.keys[0]} = (${p.map(v => fmt(Math.round(v * 1000) / 1000)).join(' ')})` +
+  setStatus(`${gmove.duped ? 'コピーを移動' : '移動'}: ${gmove.keys[0]} = ` +
+            `(${p.map(v => fmt(Math.round(v * 1000) / 1000)).join(' ')})` +
             (ev.shiftKey ? ' [0.1 スナップ]' : ''));
 }
 function gizmoEnd() {

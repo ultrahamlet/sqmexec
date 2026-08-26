@@ -328,7 +328,7 @@ export class Gizmo {
                   : kind === 'pivot' ? this.hooks.onPivotStart()
                   : kind === 'scale' ? this.hooks.onScaleStart()
                   : kind === 'point' ? this.hooks.onPointStart(ptIdx)
-                  : this.hooks.onStart();
+                  : this.hooks.onStart(e);   /* 移動だけ e を渡す (Shift+ドラッグ=複製) */
     if (!started) return;
     const endHook = kind === 'rot' ? this.hooks.onRotEnd
                   : kind === 'pivot' ? this.hooks.onPivotEnd
