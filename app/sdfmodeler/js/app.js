@@ -2406,7 +2406,7 @@ function renderObjectInspector(box) {
   box.appendChild(document.createElement('hr'));
   const btns = document.createElement('div');
   btns.className = 'btnrow';
-  btns.appendChild(button('オブジェクト複製', () => {
+  btns.appendChild(button('DUP', () => {
     snapshot();
     const copy = {
       name: obj.name + '_copy',
@@ -2420,7 +2420,7 @@ function renderObjectInspector(box) {
     mutated();
     renderInspector();
   }));
-  if (doc.objects.length > 1) btns.appendChild(button('オブジェクト削除', () => {
+  if (doc.objects.length > 1) btns.appendChild(button('DEL', () => {
     snapshot();
     doc.objects.splice(sel.objIdx, 1);
     sel = { objIdx: 0, nodeId: null };
