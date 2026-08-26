@@ -1602,7 +1602,7 @@ function renderInspector() {
 
   const btns = document.createElement('div');
   btns.className = 'btnrow';
-  btns.appendChild(button('複製', () => {
+  btns.appendChild(button('DUP.', () => {
     snapshot();
     const c = cloneNode(node);
     if (parent) parent.children.splice(parent.children.indexOf(node) + 1, 0, c);
@@ -1624,7 +1624,7 @@ function renderInspector() {
     btns.appendChild(button('▲', () => reorder(parent, node, -1)));
     btns.appendChild(button('▼', () => reorder(parent, node, +1)));
   }
-  btns.appendChild(button('削除', () => { deleteNode(obj, node); }, 'danger'));
+  btns.appendChild(button('DEL', () => { deleteNode(obj, node); }, 'danger'));
   box.appendChild(btns);
 }
 /* ── タイプ変更: 位置/サイズ/子を引き継いで別ノード型に置換 ── */
