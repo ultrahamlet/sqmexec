@@ -31,6 +31,27 @@ if ($LASTEXITCODE -ne 0) {
 Write-Host "sdfmodeler: http://localhost:$Port" -ForegroundColor Cyan
 Write-Host "  (終了は Ctrl+C)"
 if (-not $NoBrowser) {
-    Start-Job { Start-Sleep 1; Start-Process "http://localhost:$using:Port" } | Out-Null
+    # ⚠ Windows の Chromium は既定で ANGLE→**D3D11** を使う。sdfmodeler の
+    #   レイマーチ GLSL は 25 ノードを超えると HLSL コンパイラ (FXC) が
+    #   数十秒かかった末に**無音で誤コンパイル**する (リンクは成功を返すのに
+    #   全画素が一様色)。ANGLE のバックエンドを **Vulkan** にすると回避できる
+    #   (2026-08-26 に実測確認: コンパイルが劇的に速くなる)。
+    #   → Chrome があればフラグ付きで開く。無ければ既定のブラウザ。
+    # ⚠ **既に Chrome が起動していると新しいプロセスにならずフラグが無視される**。
+    #   別プロファイルで開くのはやりすぎなので、その場合は一度 Chrome を
+    #   終了してから開き直すこと (chrome://gpu の GL_RENDERER が
+    #   "ANGLE (... Vulkan ...)" になっていれば効いている)。
+    $chrome = @("$env:ProgramFiles\Google\Chrome\Application\chrome.exe",
+                "${env:ProgramFiles(x86)}\Google\Chrome\Application\chrome.exe",
+                "$env:LOCALAPPDATA\Google\Chrome\Application\chrome.exe") |
+              Where-Object { Test-Path $_ } | Select-Object -First 1
+    if ($chrome) {
+        Write-Host "  Chrome を --use-angle=vulkan で開きます (D3D の誤コンパイル回避)" -ForegroundColor DarkGray
+        Start-Job { Start-Sleep 1
+                    Start-Process $using:chrome -ArgumentList '--use-angle=vulkan',
+                        "http://localhost:$using:Port" } | Out-Null
+    } else {
+        Start-Job { Start-Sleep 1; Start-Process "http://localhost:$using:Port" } | Out-Null
+    }
 }
 & $py (Join-Path $dir 'serve.py') $Port $dir
