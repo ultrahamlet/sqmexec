@@ -1,5 +1,5 @@
 {
-    "updated": "2026-08-25",
+    "updated": "2026-08-26",
     "platforms": {
         "windows-x64": {
             "sqm": {
@@ -33,7 +33,7 @@
     },
     "app": {
         "sdfmodeler": {
-            "commit": "a94f969",
+            "commit": "1d5f57c",
             "note": "sqm/sdfmodeler の追跡ファイルの snapshot。原本は sqm 側"
         }
     }

@@ -237,6 +237,7 @@ node test/rotate.mjs      # 回転ギズモ数学 (ワールド軸角合成 / ro
 node test/scale.mjs       # スケール仕様 (リーフ別寸法マッピング / ab中点固定伸縮 / 往復恒等)
 node test/pngmeta.mjs     # PNG iTXt からのシーン復元 (元の .ssq と完全一致するか)
 node test/sunion_sentinel.mjs  # smooth-union が番兵 1e9 を畳まないか + sUnion/sInter の fp32 桁落ち
+node test/sweep_child.mjs      # 滑らか和の唯一の子 (sweep 等) が番兵フィルタで消えないか
 ```
 
 frog.ssq を import → export したものを sqm 本体でレンダリングし、

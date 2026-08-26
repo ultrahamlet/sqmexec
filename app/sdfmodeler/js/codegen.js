@@ -745,6 +745,11 @@ class Emitter {
   }
   /* 空集合の距離。番兵として登録する (直接 push しないこと) */
   emitEmpty(d) { this.push(`float ${d} = 1e9;`); this.sentinels.add(d); return d; }
+  /* 畳み込みの種 (直後のループで必ず実距離に上書きされる)。emitEmpty と違い
+     sentinels には**登録しない** — 登録すると smooth-union 親の番兵フィルタ
+     (emitOp) に空集合と誤認されて子ごと捨てられ、滑らか和の唯一の子が sweep の
+     とき object が丸ごと消える (2026-08-26。回帰 test/sweep_child.mjs) */
+  emitAccum(d) { this.push(`float ${d} = 1e9;`); return d; }
   P(node, i) { return `parAt(${this.layout.offsets.get(node.id) + i})`; }
   V3(node, i) { return `vec3(${this.P(node, i)},${this.P(node, i + 1)},${this.P(node, i + 2)})`; }
   tmp(prefix) { return prefix + (this.vc++); }
@@ -834,7 +839,7 @@ class Emitter {
                 fcOff = pdOff + npt, plOff = fcOff + nseg;
           if (npt < 2 || m < 3) this.emitEmpty(d);
           else {
-            this.emitEmpty(d);
+            this.emitAccum(d);
             this.push(`for (int i_ = 0; i_ < ${nseg}; i_++) ` +
               `${d} = min(${d}, sdSweepProfSeg(${pv}, ${off}, ${npt}, i_, ${fOff}, ${pdOff}, ${fcOff}, ${plOff}, ${m}));`);
           }
@@ -846,7 +851,7 @@ class Emitter {
         else if (npt === 1)
           this.push(`float ${d} = length(${pv} - vec3(parAt(${off}),parAt(${off + 1}),parAt(${off + 2}))) - parAt(${off + 3});`);
         else {
-          this.emitEmpty(d);
+          this.emitAccum(d);
           this.push(`for (int i_ = 0; i_ < ${nseg}; i_++) { ` +
             `int o_ = ${off} + 4 * i_; int p_ = ${off} + 4 * ((i_ + 1) % ${npt}); ` +
             `${d} = min(${d}, sdSweepSeg(${pv}, ` +
