@@ -117,12 +117,18 @@ $env:SQM_SHADER_CORE = "C:\path\to\shader.core"
 ## sdfmodeler — ブラウザの SDF/blob エディタ
 
 ```powershell
-.\serve.ps1     # → http://localhost:8642
+.\serve.ps1     # → http://localhost:8642 (Chrome を --use-angle=vulkan で開く)
 ```
 
 階層的な SDF (符号付き距離場) と blob を組み合わせて形を作り、その場で
 `.ssq` に書き出してレンダーまで通せます。WebGL2 のレイマーチングで
 プレビューし、確定した形は wasm でメッシュ化します。Python が要ります。
+
+⚠ **Windows では Chrome を全部閉じてから起動してください。** 既定の
+ANGLE→D3D11 経路は 25 ノードあたりからシェーダーのコンパイルに数十秒かかり、
+やがて**エラーを出さずに絵だけ壊します** (全画素が同じ色)。`serve.ps1` は
+これを避ける `--use-angle=vulkan` を自動で付けますが、**Chrome が既に起動して
+いるとフラグは黙って無視されます**。詳しくは [INSTALL.md](INSTALL.md#3-sdfmodeler-エディタを起動する)。
 
 ## 中身
 
