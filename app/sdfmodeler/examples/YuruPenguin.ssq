@@ -1,0 +1,53 @@
+(scene
+  (background 0.72 0.8 0.86)
+  (camera (from -0.0401634 2.46882 -4.38346) (at 0 1.18 0) (up 0 1 0) (fov 38))
+  (light (pos -3.2 4.2 -3.8) (intensity 1.20) (color 1.0 0.95 0.88) (radius 0.9))
+  (light (pos 3.6 2.0 -3.0) (intensity 0.42) (color 0.72 0.82 1.0) (radius 0.8))
+  (light (pos 0 3.4 3.0) (intensity 0.55) (color 1.0 0.98 0.95) (radius 0.8))
+  (object "floor"
+    (surface (color 0.74 0.72 0.68) (ka 0.30) (kd 0.80) (ks 0.10) (phong 0) (roi 1.0) (shader pbrsurface) (param Ka 0.30) (param Kd 0.85) (param Ks 0.12) (param roughness 0.55) (param metallic 0.0) (param Kr 0.06))
+    (sdf (plane (center 0 0 0) (normal 0 1 0) (offset 0)))
+  )
+  (object "backdrop"
+    (surface (color 0.80 0.86 0.90) (ka 0.34) (kd 0.82) (ks 0.05) (phong 0) (roi 1.0) (shader pbrsurface) (param Ka 0.34) (param Kd 0.88) (param Ks 0.06) (param roughness 0.85) (param metallic 0.0) (param Kr 0.0))
+    (sdf (box (center 0 3 2.6) (size 7 3.2 0.1)))
+  )
+  (object "peng-body"
+    (surface (color 0.11 0.13 0.19) (ka 0.26) (kd 0.55) (ks 0.10) (phong 0) (roi 1.0) (shader velvet) (param sheen-color 0.38 0.48 0.66) (param edge-power 2.2) (param sheen 1.7) (param backscatter 0.22) (param nap 0.5) (param nap-scale 26) (param body-dark 0.45) (param sheen-lit 0.6) (param roughness 0.35))
+    (displace (amp 0.014) (freq 30) (octaves 3) (mode turbulence))
+    (sdf (smooth-union (k 0.18)
+        (ellipsoid (center 0 0.8 0) (radii 0.74 0.82 0.68))
+        (smooth-union (k 0.16)
+          (ellipsoid (center 0 1.68 0) (radii 0.64 0.6 0.6))
+          (smooth-union (k 0.1)
+            (mirror (normal -1 0 0) (ellipsoid (center 0.84 0.82 0) (radii 0.15 0.46 0.3)))
+            (smooth-union (k 0.14)
+              (ellipsoid (center 0 0.32 0.58) (radii 0.3 0.17 0.28))
+              (capsule (a 0 2.2 0.04) (b 0.07 2.44 0.1) (radius 0.035)))))))
+  )
+  (object "peng-white"
+    (surface (color 0.94 0.93 0.89) (ka 0.28) (kd 0.60) (ks 0.10) (phong 0) (roi 1.0) (shader velvet) (param sheen-color 1.0 0.99 0.96) (param edge-power 2.2) (param sheen 1.5) (param backscatter 0.25) (param nap 0.5) (param nap-scale 26) (param body-dark 0.30) (param sheen-lit 0.6) (param roughness 0.35))
+    (displace (amp 0.014) (freq 30) (octaves 3) (mode turbulence))
+    (sdf (smooth-union (k 0.12)
+        (ellipsoid (center 0 0.88 -0.3) (radii 0.5 0.62 0.48))
+        (ellipsoid (center 0 1.64 -0.3) (radii 0.44 0.42 0.42))))
+  )
+  (object "peng-blush"
+    (surface (color 0.93 0.56 0.55) (ka 0.30) (kd 0.62) (ks 0.06) (phong 0) (roi 1.0) (shader velvet) (param sheen-color 1.0 0.72 0.70) (param edge-power 2.4) (param sheen 1.3) (param backscatter 0.30) (param nap 0.5) (param nap-scale 26) (param body-dark 0.25) (param sheen-lit 0.6) (param roughness 0.40))
+    (sdf (mirror (normal -1 0 0) (ellipsoid (center 0.4 1.58 -0.44) (radii 0.16 0.1 0.09))))
+  )
+  (object "peng-orange"
+    (surface (color 0.93 0.53 0.13) (ka 0.24) (kd 0.78) (ks 0.35) (phong 0) (roi 1.0) (shader pbrsurface) (param Ka 0.26) (param Kd 0.85) (param Ks 0.4) (param roughness 0.30) (param metallic 0.0) (param Kr 0.10))
+    (sdf (union
+        (round-cone-ab (a 0 1.58 -0.7) (b 0 1.5 -0.98) (r1 0.17) (r2 0.055))
+        (mirror (normal -1 0 0) (ellipsoid (center 0.3 0.075 -0.44) (radii 0.25 0.075 0.36)))))
+  )
+  (object "peng-eyes"
+    (surface (color 0.03 0.03 0.04) (ka 0.10) (kd 0.45) (ks 0.60) (phong 0) (roi 1.0) (shader pbrsurface) (param Ka 0.10) (param Kd 0.6) (param Ks 0.8) (param roughness 0.10) (param metallic 0.0) (param Kr 0.40))
+    (sdf (mirror (normal -1 0 0) (sphere (center 0.26 1.78 -0.66) (radius 0.12))))
+  )
+  (object "peng-catchlight"
+    (surface (color 1.0 1.0 1.0) (ka 0.85) (kd 0.5) (ks 0.2) (phong 0) (roi 1.0) (shader pbrsurface) (param Ka 0.9) (param Kd 0.5) (param Ks 0.2) (param roughness 0.4) (param metallic 0.0) (param Kr 0.0))
+    (sdf (mirror (normal -1 0 0) (sphere (center 0.295 1.835 -0.758) (radius 0.035))))
+  )
+)
