@@ -1,21 +1,21 @@
 {
-    "updated": "2026-08-29",
+    "updated": "2026-08-30",
     "platforms": {
         "windows-x64": {
             "sqm": {
-                "commit": "577c408",
-                "subject": "sdfmodeler: examples に Kappa_Blob (blob モデルの往復保存)",
-                "bytes": 5007270
+                "commit": "4a352c7",
+                "subject": "blob pivot doc: --blob-pivot 追加後の記述に更新",
+                "bytes": 5007791
             },
             "shader_core": {
-                "commit": "076985f",
-                "subject": "hexshell: 甲羅の六角タイル (亀甲) シェーダー",
-                "bytes": 684565
+                "commit": "c806ecf",
+                "subject": "hexshell / treefrogskin: 投影を shader 空間へ (動くと模様が体から剥がれる)",
+                "bytes": 685077
             },
             "built_with": "MSYS2 UCRT64 GCC 16.2.0 (static link)",
             "runtime_deps": "Windows 10/11 のシステム DLL のみ (UCRT)。MSYS2 不要 — 実測確認済み",
             "sqm_gpu": {
-                "commit": "577c408",
+                "commit": "4a352c7",
                 "bytes": 2467840,
                 "note": "任意。CUDA 遮蔽オフロード (SQM_SHADOW_PREPASS 等)。無くても sqm は CPU で動く。MSVC + nvcc ビルド"
             }
@@ -38,7 +38,7 @@
     },
     "app": {
         "sdfmodeler": {
-            "commit": "577c408",
+            "commit": "4a352c7",
             "note": "sqm/sdfmodeler の追跡ファイルの snapshot。原本は sqm 側"
         }
     }
