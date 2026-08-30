@@ -1,0 +1,63 @@
+; ponde_ring.ssq — 半分だけポンデリングのガラスの輪 (blob 13 個)
+;
+;   SQM_CAUSTIC_GAIN=30 SQM_CAUSTIC_DEPTH=1 ;   ./sqm -i ../scenes/ponde_ring.ssq -o /tmp/out.png -x 1200 -y 800 ;         -A 8   ← **AA が唯一効く手**。上の切り分けを参照
+;          -s 3 -O 6 -D 3 -K 24000000:0.0068 -T aces:1.05:2.2
+;
+; 管の半径は同じまま、隣接間隔だけを `blobkit` から引いてある (切れる距離 d_c=2.38R):
+;   奥半分 8 粒 / 弦 1.23R → 首 = 管の 99% / 数珠度 0.008
+;   手前半 5 粒 / 弦 1.95R → 首 = 管の 68% / 数珠度 0.329
+; ⚠ 粒数を四捨五入で決めると弦が d_c を超えて**輪が切れる** (4粒で首 0 になった)。
+;   弦が d_c の 93% 以下になる最小の粒数を取る。
+;
+; 集約半径 = 受け面での 1 画素の実寸 × 2.5:
+;   1.77m × (0.5934/800) ÷ sin(28.7°) = 0.0027 m → **radius 0.0068**
+
+(scene
+  (background 0.050 0.055 0.068)
+  (camera (from 0 0.95 -1.55) (at 0 0.10 0.00) (up 0 1 0) (fov 34))
+
+  (light (pos -0.75 2.30 1.05) (intensity 2.60) (color 1.00 0.96 0.88) (radius 0.030))
+  (light (pos  1.60 1.10 -1.40) (intensity 0.16) (color 0.62 0.72 0.95) (radius 0.40))
+
+  ; ⚠ **粒に見えていたのはレンダラのノイズではなく屈折像のエイリアス**だった。
+  ;   切り分け (600x400, -A 2 固定): roughness 0 / fresnel 0 / ks 0 / -s 1 / -O 0 /
+  ;   SQM_MB_NORMAL_DELTA 1e-5〜8e-3 / -D 3〜12 — **どれも 0.19 のまま動かない**。
+  ;   一方 AA を上げると HF² = a/N + b に乗って落ちる (4spp 0.192 → 16spp 0.109 →
+  ;   36spp 0.085、実像の床 0.060)。凸凹した面が屈折方向を画素内で大きく変えるため。
+  ;   → 手は2つ: ①AA を上げる ②**屈折の先に滑らかなものを置く**。
+  ;   ②が効く: 平らな暗い背景を透かすと床や影の硬い縁が拡大されて高周波になる。
+  ;   空ドームを入れると屈折像が滑らかな階調になり、同じ AA でも粒が減る。
+  (object "sky"
+    (surface (color 1 1 1)(ka 1)(kd 0)(ks 0)(phong 0)(roi 1)(shader fakesky2)
+      (param sundir -0.38 0.72 0.58)(param zenith-color 0.16 0.30 0.52)
+      (param horizon-color 0.78 0.72 0.62)(param sun-color 1.00 0.94 0.80)
+      (param sun-size 900)(param sun-glow 6)(param cloud-cover 0.40)
+      (param cloud-sharp 0.22)(param cloud-scale 1.8)(param horizon-falloff 0.42)
+      (param exposure 1.0))
+    (mesh (file "$SQM_ROOT/assets/sky_sphere.obj")(scale 60 60 60)))
+
+  (object "floor"
+    (surface (color 0.34 0.33 0.31) (ka 0.09) (kd 0.88) (ks 0.02) (phong 10)
+             (roi 1.0) (shader plastic)
+             (param Ka 0.09) (param Kd 0.88) (param Ks 0.02) (param roughness 0.55))
+    (sdf (plane (center 0 0 0) (normal 0 1 0) (offset 0))))
+
+  (object "ring"
+    (surface (color 0.90 0.96 1.00) (ka 0.0) (kd 0.0) (ks 0.12) (phong 155)
+             (kt 0.95) (roi 1.48) (shader glass)
+             (param Ks 0.88) (param Kr 0.30) (param roughness 0.012)
+             (param fresnel 1))
+    (blob (weight 3.0)(threshold 0.4200)(group 1)(pos 0.3000 0.0969 0.0000)(scale 0.1547 0.1547 0.1547)(rot 0.00 0.00 0.00))
+    (blob (weight 3.0)(threshold 0.4200)(group 1)(pos 0.2772 0.0969 0.1148)(scale 0.1547 0.1547 0.1547)(rot 0.00 0.00 0.00))
+    (blob (weight 3.0)(threshold 0.4200)(group 1)(pos 0.2121 0.0969 0.2121)(scale 0.1547 0.1547 0.1547)(rot 0.00 0.00 0.00))
+    (blob (weight 3.0)(threshold 0.4200)(group 1)(pos 0.1148 0.0969 0.2772)(scale 0.1547 0.1547 0.1547)(rot 0.00 0.00 0.00))
+    (blob (weight 3.0)(threshold 0.4200)(group 1)(pos 0.0000 0.0969 0.3000)(scale 0.1547 0.1547 0.1547)(rot 0.00 0.00 0.00))
+    (blob (weight 3.0)(threshold 0.4200)(group 1)(pos -0.1148 0.0969 0.2772)(scale 0.1547 0.1547 0.1547)(rot 0.00 0.00 0.00))
+    (blob (weight 3.0)(threshold 0.4200)(group 1)(pos -0.2121 0.0969 0.2121)(scale 0.1547 0.1547 0.1547)(rot 0.00 0.00 0.00))
+    (blob (weight 3.0)(threshold 0.4200)(group 1)(pos -0.2772 0.0969 0.1148)(scale 0.1547 0.1547 0.1547)(rot 0.00 0.00 0.00))
+    (blob (weight 3.0)(threshold 0.4200)(group 1)(pos -0.3000 0.0969 0.0000)(scale 0.1547 0.1547 0.1547)(rot 0.00 0.00 0.00))
+    (blob (weight 3.0)(threshold 0.4200)(group 1)(pos -0.2427 0.0969 -0.1763)(scale 0.1547 0.1547 0.1547)(rot 0.00 0.00 0.00))
+    (blob (weight 3.0)(threshold 0.4200)(group 1)(pos -0.0927 0.0969 -0.2853)(scale 0.1547 0.1547 0.1547)(rot 0.00 0.00 0.00))
+    (blob (weight 3.0)(threshold 0.4200)(group 1)(pos 0.0927 0.0969 -0.2853)(scale 0.1547 0.1547 0.1547)(rot 0.00 0.00 0.00))
+    (blob (weight 3.0)(threshold 0.4200)(group 1)(pos 0.2427 0.0969 -0.1763)(scale 0.1547 0.1547 0.1547)(rot 0.00 0.00 0.00)))
+)

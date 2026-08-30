@@ -100,7 +100,10 @@ function Set-SqmEnvVars($e) {
         $env:SQM_SHADER_CORE = ($e.ShaderCore -replace '\\', '/')
     }
     # ② シーン内の $SQM_ROOT/... を解決する根 (Mac⇄Win でパスを焼き込まないため)
-    $env:SQM_ROOT = $e.SqmRepo
+    #    sqm リポジトリが無い配布機では sqmexec 自身を根にする — assets/ は
+    #    同梱してあるので、これが無いと sky_sphere.obj 等が**黙って描かれない**
+    if (Test-Path $e.SqmRepo) { $env:SQM_ROOT = $e.SqmRepo }
+    else { $env:SQM_ROOT = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path }
     # ③ 接地影の光漏れ (白い三日月)。既定 0.05 は漏れる側なので実用値へ
     if (-not $env:SQM_SHADOW_SEPS) { $env:SQM_SHADOW_SEPS = '0.002' }
     # ④ ucrt64/bin を PATH 先頭へ (ビルドだけでなく実行時 DLL 解決にも要る)

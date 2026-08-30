@@ -105,6 +105,7 @@ Claude Code のシェルツールは**呼び出しごとに新しいシェル**�
 | レンダー | `.\render.ps1 <scene.ssq> <out.png>` |
 | 高品質レンダー | `.\render.ps1 <scene.ssq> <out.png> -Quality hq` |
 | sdfmodeler (ブラウザ SDF エディタ) | `.\serve.ps1` → http://localhost:8642 |
+| **PNG からシーンを復元** | `.\scene-from-png.ps1 <out.png> [scene.ssq]` |
 | 素の sqm に任意引数 | `.\render.ps1 <scene> <out> -Raw "-Q 128:20:1 -T aces:1.7:2.2"` |
 
 mac/Linux は同名の `.sh` (`./doctor.sh` など)。引数は同じ並び。
@@ -180,6 +181,7 @@ git add -A; git commit
 | メッシュ経路が 500 / `field2obj の import 失敗` | numpy / scikit-image 未導入 | `pip install numpy scikit-image` |
 | シーンの mesh/grid だけ描かれず真っ黒にならない | 絶対パス焼き込み or 相対パス。Mac⇄Win で必ず片方が開けない | シーン側で `$SQM_ROOT/...` を使う。ラッパは `SQM_ROOT` を渡す |
 | exe を改名したら DR が落ちる/segfault | ②の制約 | 名前は `sqm.exe` のまま・別ディレクトリに置く |
+| PNG から復元したシーンが元と違う絵になる | `sqm:env` の `SQM_*` (`SQM_CAUSTIC_GAIN` 等) はラッパが渡さない | `scene-from-png` が出す env を見て、同じ呼び出しの中で `$env:` に入れてから render する |
 
 ---
 
