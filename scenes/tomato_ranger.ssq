@@ -1,0 +1,94 @@
+; tomato_ranger.ssq - new tomato character "Tomato Ranger"
+(scene
+  (background 0.12 0.24 0.28)
+  (camera (from 0.35 1.35 -4.6) (at 0 0.95 0) (up 0 1 0) (fov 38))
+  (light (pos -3.4 4.5 -4.0)(intensity 1.70)(color 1.0 0.95 0.88)(radius 0.9))
+  (light (pos 3.2 2.4 -2.8)(intensity 0.60)(color 0.72 0.84 1.0)(radius 0.8))
+  (light (pos 0 3.2 2.8)(intensity 0.65)(color 1.0 0.98 0.95)(radius 0.8))
+
+  (object "floor"
+    (surface (color 0.84 0.78 0.68)(ka 0.34)(kd 0.82)(ks 0.10)(phong 0)(roi 1.0)(shader toon)(param levels 3)(param edge-width 0.25))
+    (sdf (plane (center 0 0 0))))
+  ; toon forest backdrop: distant trunks, layered crowns, and undergrowth
+  (object "forest-trunks"
+    (surface (color 0.16 0.10 0.06)(ka 0.28)(kd 0.76)(ks 0.02)(phong 0)(roi 1.0)(shader toon)(param levels 3)(param edge-width 0.20))
+    (sdf (union
+          (union
+            (capsule (a -3.1 0.0 2.55) (b -3.0 3.2 2.55) (radius 0.22))
+            (capsule (a -1.8 0.0 2.75) (b -1.9 2.6 2.75) (radius 0.18)))
+          (union
+            (capsule (a 1.8 0.0 2.70) (b 1.9 2.8 2.70) (radius 0.18))
+            (capsule (a 3.1 0.0 2.50) (b 3.0 3.3 2.50) (radius 0.22))))))
+  (object "forest-crowns"
+    (surface (color 0.08 0.34 0.16)(ka 0.30)(kd 0.78)(ks 0.02)(phong 0)(roi 1.0)(shader toon)(param levels 3)(param edge-width 0.20))
+    (sdf (union
+          (union
+            (ellipsoid (center -3.0 3.15 2.55) (radii 1.0 0.72 0.35))
+            (ellipsoid (center -1.9 2.55 2.75) (radii 0.85 0.62 0.30)))
+          (union
+            (ellipsoid (center 1.9 2.75 2.70) (radii 0.85 0.62 0.30))
+            (ellipsoid (center 3.0 3.15 2.50) (radii 1.0 0.72 0.35))))))
+  (object "forest-underbrush"
+    (surface (color 0.04 0.22 0.10)(ka 0.30)(kd 0.78)(ks 0.02)(phong 0)(roi 1.0)(shader toon)(param levels 3)(param edge-width 0.20))
+    (sdf (union
+          (ellipsoid (center -2.6 0.38 2.35) (radii 1.35 0.42 0.26))
+          (union
+            (ellipsoid (center 2.6 0.38 2.35) (radii 1.35 0.42 0.26))
+            (ellipsoid (center 0 0.28 2.45) (radii 2.8 0.28 0.20))))))
+
+  ; round tomato body with a small shoulder
+  (object "ranger-body"
+    (surface (color 0.94 0.12 0.08)(ka 0.34)(kd 0.84)(ks 0.06)(phong 0)(roi 1.0)(shader toon)(param levels 3)(param edge-width 0.25))
+    (sdf (smooth-union (k 0.14)
+          (ellipsoid (center 0 0.88 0) (radii 0.94 0.88 0.88))
+          (ellipsoid (center 0 1.32 0) (radii 0.76 0.38 0.72)))))
+
+  ; green star leaves and stem
+  (object "ranger-leaves"
+    (surface (color 0.18 0.42 0.12)(ka 0.30)(kd 0.72)(ks 0.03)(phong 0)(roi 1.0)(shader toon)(param levels 3)(param edge-width 0.25))
+    (sdf (union
+          (ellipsoid (center 0 1.58 0) (radii 0.22 0.08 0.22))
+          (union
+            (ellipsoid (center 0.36 1.62 0) (radii 0.42 0.07 0.15))
+            (union
+              (ellipsoid (center -0.36 1.62 0) (radii 0.42 0.07 0.15))
+              (union
+                (ellipsoid (center 0 1.62 0.36) (radii 0.15 0.07 0.42))
+                (union
+                  (ellipsoid (center 0 1.62 -0.36) (radii 0.15 0.07 0.42))
+                  (capsule (a 0 1.56 0) (b 0.03 1.86 0.02) (radius 0.09)))))))))
+
+  ; arms and yellow boots
+  (object "ranger-limbs"
+    (surface (color 0.94 0.12 0.08)(ka 0.30)(kd 0.78)(ks 0.04)(phong 0)(roi 1.0)(shader toon)(param levels 3)(param edge-width 0.25))
+    (sdf (union
+          (mirror (normal -1 0 0) (capsule (a 0.76 0.88 -0.02) (b 1.18 0.58 -0.20) (radius 0.14)))
+          (capsule (a -0.38 0.28 0) (b -0.38 0.05 -0.02) (radius 0.17)))))
+  (object "ranger-boots"
+    (surface (color 0.95 0.70 0.08)(ka 0.28)(kd 0.76)(ks 0.05)(phong 0)(roi 1.0)(shader toon)(param levels 3)(param edge-width 0.25))
+    (sdf (mirror (normal -1 0 0) (ellipsoid (center 0.38 0.12 -0.18) (radii 0.28 0.16 0.34)))))
+
+  ; new face: symmetric visor eyes, a button nose, and an open smile
+  (object "ranger-eyes"
+    (surface (color 0.03 0.08 0.12)(ka 0.08)(kd 0.44)(ks 0.05)(phong 0)(roi 1.0)(shader toon)(param levels 3)(param edge-width 0.25))
+    (sdf (union
+          (ellipsoid (center -0.32 1.01 -0.80) (radii 0.18 0.17 0.07))
+          (ellipsoid (center 0.32 1.01 -0.80) (radii 0.18 0.17 0.07)))))
+  (object "ranger-eye-lights"
+    (surface (color 0.72 0.95 1.0)(ka 0.90)(kd 0.4)(ks 0.0)(phong 0)(roi 1.0)(shader toon)(param levels 3)(param edge-width 0.25))
+    (sdf (union
+          (sphere (center -0.39 1.06 -0.875) (radius 0.045))
+          (sphere (center 0.39 1.06 -0.875) (radius 0.045)))))
+  (object "ranger-nose"
+    (surface (color 0.98 0.66 0.08)(ka 0.24)(kd 0.72)(ks 0.08)(phong 0)(roi 1.0)(shader toon)(param levels 3)(param edge-width 0.25))
+    (sdf (ellipsoid (center 0 0.82 -0.91) (radii 0.13 0.11 0.10))))
+  (object "ranger-mouth"
+    (surface (color 0.16 0.015 0.02)(ka 0.20)(kd 0.60)(ks 0.02)(phong 0)(roi 1.0)(shader toon)(param levels 3)(param edge-width 0.25))
+    (sdf (ellipsoid (center 0 0.55 -0.84) (radii 0.28 0.14 0.08))))
+  (object "ranger-tongue"
+    (surface (color 0.95 0.24 0.30)(ka 0.28)(kd 0.72)(ks 0.03)(phong 0)(roi 1.0)(shader toon)(param levels 3)(param edge-width 0.25))
+    (sdf (ellipsoid (center 0 0.52 -0.925) (radii 0.15 0.07 0.035))))
+  (object "ranger-cheeks"
+    (surface (color 1.0 0.52 0.42)(ka 0.38)(kd 0.62)(ks 0.0)(phong 0)(roi 1.0)(shader toon)(param levels 3)(param edge-width 0.25))
+    (sdf (mirror (normal -1 0 0) (ellipsoid (center 0.52 0.78 -0.73) (radii 0.16 0.10 0.09)))))
+)
