@@ -1,0 +1,47 @@
+(scene
+  (background 1.0 0.0 0.85)
+  (camera (from 0 1.20 -4.2) (at 0 0.85 0) (up 0 1 0) (fov 38))
+  (light (pos -3 4 -4)(intensity 1.6)(color 1 0.95 0.88)(radius 0.8))
+  (light (pos 3 2 -3)(intensity 0.6)(color 0.7 0.85 1)(radius 0.8))
+  (object "carrot"
+    (surface (color 0.95 0.28 0.04)(ka 0.3)(kd 0.8)(ks 0.04)(phong 0)(roi 1)(shader toon)(param levels 3)(param edge-width 0.25))
+    (sdf (smooth-union (k 0.08)
+      (round-cone-ab (a 0 0.22 0) (b 0 1.52 0) (r1 0.28) (r2 0.54))
+      (ellipsoid (center 0 1.35 0) (radii 0.48 0.38 0.42)))))
+  (object "carrot-stripes"
+    (surface (color 0.72 0.13 0.02)(ka 0.22)(kd 0.68)(ks 0.02)(phong 0)(roi 1)(shader toon)(param levels 3)(param edge-width 0.18))
+    (sdf (union
+      (ellipsoid (center -0.26 1.15 -0.40) (radii 0.10 0.035 0.035))
+      (union
+        (ellipsoid (center 0.24 0.92 -0.45) (radii 0.12 0.035 0.035))
+        (ellipsoid (center -0.16 0.66 -0.35) (radii 0.10 0.03 0.03))))))
+  (object "leaves"
+    (surface (color 0.12 0.48 0.10)(ka 0.3)(kd 0.75)(ks 0.03)(phong 0)(roi 1)(shader toon)(param levels 3)(param edge-width 0.25))
+    (sdf (union
+      (capsule (a 0 1.55 0) (b -0.35 2.1 0) (radius 0.09))
+      (union
+        (capsule (a 0 1.58 0) (b 0 2.18 0.05) (radius 0.09))
+        (capsule (a 0 1.55 0) (b 0.38 2.05 0) (radius 0.09))))))
+  (object "carrot-arms"
+    (surface (color 0.95 0.28 0.04)(ka 0.3)(kd 0.8)(ks 0.04)(phong 0)(roi 1)(shader toon)(param levels 3)(param edge-width 0.22))
+    (sdf (union
+      (capsule (a -0.40 0.92 -0.02) (b -0.72 0.70 -0.18) (radius 0.10))
+      (union
+        (capsule (a 0.40 0.92 -0.02) (b 0.72 0.70 -0.18) (radius 0.10))
+        (union
+          (sphere (center -0.76 0.68 -0.18) (radius 0.13))
+          (sphere (center 0.76 0.68 -0.18) (radius 0.13)))))))
+  (object "eyes"
+    (surface (color 0.02 0.02 0.03)(ka 0.1)(kd 0.5)(ks 0.2)(phong 0)(roi 1)(shader toon)(param levels 3)(param edge-width 0.2))
+    (sdf (union
+      (sphere (center -0.20 1.18 -0.52) (radius 0.12))
+      (sphere (center 0.20 1.18 -0.52) (radius 0.12)))))
+  (object "carrot-blush"
+    (surface (color 1.0 0.42 0.28)(ka 0.35)(kd 0.65)(ks 0)(phong 0)(roi 1)(shader toon)(param levels 3)(param edge-width 0.18))
+    (sdf (union
+      (sphere (center -0.34 0.98 -0.53) (radius 0.09))
+      (sphere (center 0.34 0.98 -0.53) (radius 0.09)))))
+  (object "mouth"
+    (surface (color 0.18 0.01 0.02)(ka 0.2)(kd 0.6)(ks 0)(phong 0)(roi 1)(shader toon)(param levels 3)(param edge-width 0.2))
+    (sdf (ellipsoid (center 0 0.82 -0.56) (radii 0.20 0.07 0.05))))
+)

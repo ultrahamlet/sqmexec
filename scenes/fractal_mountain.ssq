@@ -1,0 +1,77 @@
+; fractal_mountain.ssq - self-similar mountain landscape
+(scene
+  (background 0.05 0.10 0.20)
+  (camera (from 4.4 2.8 -7.2) (at 0 1.45 1.0) (up 0 1 0) (fov 42))
+
+  (light (pos -4.0 6.0 -4.5) (intensity 2.10) (color 1.0 0.92 0.80) (radius 1.0))
+  (light (pos 4.0 3.0 -1.5) (intensity 0.60) (color 0.42 0.62 1.0) (radius 1.2))
+
+  (object "valley"
+    (surface (color 0.10 0.25 0.18) (ka 0.24) (kd 0.76) (ks 0.04) (phong 8)
+             (shader toon) (param levels 4) (param edge-width 0.16))
+    (sdf (plane (center 0 0 0) (normal 0 1 0) (offset 0))))
+
+  ; Large-scale triangular silhouette.
+  (object "mountain-base"
+    (surface (color 0.20 0.27 0.30) (ka 0.22) (kd 0.78) (ks 0.05) (phong 10)
+             (shader toon) (param levels 4) (param edge-width 0.18))
+    (sdf (smooth-union (k 0.22)
+          (ellipsoid (center 0 1.75 2.20) (radii 3.0 2.0 1.0))
+          (union
+            (ellipsoid (center -2.7 1.15 1.4) (radii 2.0 1.25 0.75))
+            (ellipsoid (center 2.5 1.25 1.6) (radii 2.2 1.35 0.85))))))
+
+  ; Repeated smaller peaks: the same triangular motif at a lower scale.
+  (object "fractal-ridges"
+    (surface (color 0.25 0.34 0.37) (ka 0.24) (kd 0.76) (ks 0.04) (phong 10)
+             (shader toon) (param levels 4) (param edge-width 0.16))
+    (sdf (union
+          (union
+            (ellipsoid (center -1.65 2.25 0.95) (radii 1.15 1.15 0.52))
+            (ellipsoid (center -0.45 2.90 1.10) (radii 0.82 1.75 0.42)))
+          (union
+            (ellipsoid (center 0.65 2.45 1.05) (radii 1.05 1.30 0.48))
+            (union
+              (ellipsoid (center 1.70 2.05 1.18) (radii 0.92 1.05 0.50))
+              (union
+                (ellipsoid (center -2.55 1.65 0.70) (radii 0.72 0.85 0.40))
+                (ellipsoid (center 2.65 1.60 0.92) (radii 0.78 0.82 0.42)))))))
+
+  ; Small repeating facets break the smooth silhouette like a fractal detail layer.
+  (object "fractal-facets"
+    (surface (color 0.31 0.40 0.42) (ka 0.24) (kd 0.72) (ks 0.03) (phong 8)
+             (shader toon) (param levels 4) (param edge-width 0.13))
+    (sdf (union
+          (union
+            (ellipsoid (center -1.10 2.45 0.35) (radii 0.45 0.62 0.24))
+            (ellipsoid (center -0.25 3.45 0.48) (radii 0.42 0.75 0.20)))
+          (union
+            (ellipsoid (center 0.55 2.80 0.40) (radii 0.48 0.65 0.22))
+            (union
+              (ellipsoid (center 1.35 2.35 0.55) (radii 0.40 0.55 0.24))
+              (union
+                (ellipsoid (center -2.00 1.98 0.25) (radii 0.32 0.45 0.18))
+                (ellipsoid (center 2.15 1.95 0.40) (radii 0.35 0.48 0.20)))))))
+
+  ; Snow follows the upper edges of the largest and secondary peaks.
+  (object "snow-caps"
+    (surface (color 0.86 0.94 1.0) (ka 0.34) (kd 0.74) (ks 0.10) (phong 18)
+             (shader toon) (param levels 3) (param edge-width 0.12))
+    (sdf (union
+          (union
+            (ellipsoid (center -0.47 4.08 -0.10) (radii 0.48 0.44 0.22))
+            (ellipsoid (center -1.55 3.18 -0.10) (radii 0.58 0.30 0.26)))
+          (union
+            (ellipsoid (center 0.65 3.63 -0.10) (radii 0.52 0.34 0.24))
+            (union
+              (ellipsoid (center 1.68 2.88 -0.08) (radii 0.42 0.25 0.22))
+              (ellipsoid (center 2.65 2.30 -0.08) (radii 0.35 0.20 0.18)))))))
+
+  (object "foreground-rocks"
+    (surface (color 0.12 0.20 0.20) (ka 0.20) (kd 0.78) (ks 0.03) (phong 6))
+    (sdf (union
+          (ellipsoid (center -3.0 0.28 -0.6) (radii 1.4 0.35 0.55))
+          (union
+            (ellipsoid (center 2.8 0.25 -0.8) (radii 1.6 0.30 0.65))
+            (ellipsoid (center 0 0.16 -0.25) (radii 2.2 0.18 0.35))))))
+)))
